@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Madhi — Phase 1 Wireframe</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #e8e8e8; color: #222; }
+
+.shell { max-width: 680px; margin: 0 auto; min-height: 100vh; background: #fff; display: flex; flex-direction: column; }
+.topbar { border-bottom: 1px solid #ddd; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; background: #fff; position: sticky; top: 0; z-index: 10; }
+.brand { display: inline-flex; align-items: center; gap: 9px; }
+.brand-mark { width: 32px; height: 32px; display: block; flex-shrink: 0; }
+.brand-word { display: flex; flex-direction: column; line-height: 1; }
+.logo { font-weight: 760; font-size: 18px; letter-spacing: -0.2px; }
+.logo-sub { margin-top: 3px; font-size: 10px; color: #777; letter-spacing: 0.9px; text-transform: uppercase; }
+.step-label { font-size: 12px; color: #888; }
+.progress-bar { height: 3px; background: #eee; }
+.progress-fill { height: 100%; background: #222; transition: width 0.25s; }
+.content { flex: 1; padding: 28px 24px 100px; }
+.footer { border-top: 1px solid #ddd; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; background: #fff; position: sticky; bottom: 0; z-index: 10; }
+
+.screen-title { font-size: 21px; font-weight: 700; margin-bottom: 6px; }
+.screen-sub { font-size: 13px; color: #666; margin-bottom: 24px; line-height: 1.55; }
+label.field-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: #444; text-transform: uppercase; letter-spacing: 0.3px; }
+.hint { font-size: 11px; color: #999; margin-top: 4px; line-height: 1.4; }
+input[type=text], input[type=number], select, textarea {
+  width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 9px 11px;
+  font-size: 14px; font-family: inherit; background: #fafafa; color: #222;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid #222; background: #fff; }
+textarea { resize: vertical; min-height: 68px; }
+
+.radio-group { display: flex; flex-direction: column; gap: 7px; }
+.radio-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.radio-row input[type=radio] { width: 15px; height: 15px; flex-shrink: 0; accent-color: #222; }
+.check-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.check-row input[type=checkbox] { width: 15px; height: 15px; flex-shrink: 0; accent-color: #222; }
+
+.seg-group { display: flex; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+.seg-option { flex: 1; }
+.seg-option input { display: none; }
+.seg-option label { display: block; padding: 8px 6px; font-size: 13px; font-weight: 500; cursor: pointer; border-right: 1px solid #ccc; color: #666; text-align: center; }
+.seg-option:last-child label { border-right: none; }
+.seg-option input:checked + label { background: #222; color: #fff; }
+
+.field { margin-bottom: 18px; }
+.field-row { display: grid; gap: 14px; margin-bottom: 18px; }
+.col2 { grid-template-columns: 1fr 1fr; }
+.col3 { grid-template-columns: 1fr 1fr 1fr; }
+.divider { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+.section-head { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.6px; margin: 20px 0 12px; }
+
+.cond { display: none; }
+.cond.show { display: block; }
+.cond-box { padding: 14px; background: #f8f8f8; border-radius: 8px; margin-top: 10px; }
+
+.commitment-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.commitment-card { border: 1px solid #ddd; border-radius: 8px; padding: 13px; background: #fafafa; }
+.commitment-card-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 11px; }
+.commitment-card-hd span { font-size: 12px; font-weight: 600; color: #666; }
+.add-btn { width: 100%; padding: 9px; border: 1.5px dashed #bbb; border-radius: 6px; background: #fff; font-size: 13px; color: #666; cursor: pointer; text-align: center; font-family: inherit; }
+.add-btn:hover { border-color: #888; color: #222; }
+.remove-btn { font-size: 11px; color: #aaa; cursor: pointer; background: none; border: none; text-decoration: underline; font-family: inherit; }
+
+.nil-wrap { margin-top: 18px; padding-top: 18px; border-top: 1.5px dashed #ddd; text-align: center; }
+.nil-btn { padding: 9px 18px; border: 1px solid #ccc; border-radius: 6px; background: #fff; font-size: 13px; color: #666; cursor: pointer; font-family: inherit; }
+.nil-btn.on { border-color: #222; background: #f0f0f0; color: #222; font-weight: 600; }
+.nil-hint { font-size: 11px; color: #aaa; margin-top: 7px; }
+
+.derived-box { background: #f2f7f2; border: 1px solid #b8d8b8; border-radius: 8px; padding: 14px 16px; }
+.derived-amount { font-size: 22px; font-weight: 700; color: #2a6a2a; }
+.derived-breakdown { font-size: 11px; color: #666; margin-top: 3px; }
+.derived-edit { font-size: 12px; color: #666; text-decoration: underline; cursor: pointer; margin-top: 8px; display: inline-block; }
+
+.clarify-card { border: 2px solid #d4920a; border-radius: 8px; padding: 14px; background: #fffbf0; margin-top: 10px; display: none; }
+.clarify-title { font-size: 13px; font-weight: 700; color: #9a6800; margin-bottom: 10px; }
+.parsed-row { display: flex; gap: 8px; align-items: baseline; margin-bottom: 5px; font-size: 12px; }
+.parsed-key { font-weight: 600; color: #999; min-width: 90px; }
+.parsed-val { color: #222; }
+.parsed-missing { color: #c05000; font-style: italic; }
+
+.goal-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.goal-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: #f5f5f5; border-radius: 6px; font-size: 13px; gap: 10px; }
+.goal-badge { font-size: 11px; padding: 2px 8px; background: #e0e0e0; border-radius: 20px; color: #555; white-space: nowrap; }
+
+.milestone-card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 11px; transition: border-color 0.15s, background 0.15s; }
+.milestone-card.approved { border-color: #2a7a2a; background: #f2f8f2; }
+.milestone-card.skipped { opacity: 0.45; }
+.milestone-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.source-badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 600; }
+.badge-rule { background: #e8e8e8; color: #555; }
+.badge-ai { background: #e0eaff; color: #2244aa; }
+.milestone-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.milestone-rationale { font-size: 13px; color: #555; line-height: 1.55; margin-bottom: 13px; }
+.milestone-actions { display: flex; gap: 8px; }
+.approval-summary { font-size: 13px; color: #777; margin-bottom: 18px; }
+
+.plan-item { display: flex; gap: 13px; align-items: flex-start; padding: 13px 0; border-bottom: 1px solid #eee; }
+.moon { font-size: 22px; line-height: 1; }
+.plan-body { flex: 1; }
+.plan-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.plan-note { font-size: 12px; color: #777; }
+
+.note { background: #eef4ff; border-left: 3px solid #5588cc; padding: 9px 12px; font-size: 11px; color: #3366aa; border-radius: 0 5px 5px 0; margin-top: 8px; line-height: 1.5; }
+
+.btn-primary { padding: 10px 22px; background: #222; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.btn-secondary { padding: 10px 22px; background: #fff; color: #444; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.btn-text { background: none; border: none; color: #888; font-size: 13px; cursor: pointer; font-family: inherit; text-decoration: underline; }
+.btn-approve { padding: 7px 16px; background: #222; color: #fff; border: none; border-radius: 5px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.btn-skip { padding: 7px 16px; background: #fff; color: #666; border: 1px solid #ccc; border-radius: 5px; font-size: 12px; cursor: pointer; font-family: inherit; }
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+.disclaimer { margin-top: 22px; padding: 14px 16px; background: #f5f5f5; border-radius: 8px; font-size: 12px; color: #777; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="topbar">
+    <div class="brand" aria-label="Madhi — Clear Paths.">
+      <svg class="brand-mark" viewBox="0 0 32 32" role="img" aria-label="Madhi logo">
+        <rect x="1.5" y="1.5" width="29" height="29" rx="8" fill="#222"/>
+        <path d="M20.8 6.4c-4.8 1.4-8.3 5.8-8.3 10.9 0 3.5 1.6 6.6 4.1 8.7-5.7-.7-10.1-5.5-10.1-11.4 0-6.4 5.1-11.5 11.5-11.5 1 0 1.9.1 2.8.4z" fill="#fff"/>
+        <path d="M9.2 21.4c3.1-3.7 6.8-5.4 11.2-5.2" fill="none" stroke="#d4920a" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="23.4" cy="16.6" r="2" fill="#d4920a"/>
+      </svg>
+      <span class="brand-word">
+        <span class="logo">Madhi</span>
+        <span class="logo-sub">Clear paths</span>
+      </span>
+    </div>
+    <span class="step-label" id="step-label">Step 1 of 7</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:11%"></div></div>
+
+  <!-- ── SCREEN 1: About You ── -->
+  <div class="screen active content" id="screen-1">
+    <div class="screen-title">About you</div>
+    <div class="screen-sub">Basic facts. Your experience level sets how we explain things — nothing else is inferred from your background.</div>
+
+    <div class="field-row col2">
+      <div class="field">
+        <label class="field-label">Age</label>
+        <input type="number" placeholder="e.g. 28" min="18" max="75">
+      </div>
+      <div class="field">
+        <label class="field-label">City / state <span style="font-weight:400;color:#bbb">(context only)</span></label>
+        <input type="text" placeholder="e.g. Chennai">
+        <div class="hint">Never used to assume commitments — those are asked directly.</div>
+      </div>
+    </div>
+
+    <div class="field-row col2">
+      <div class="field">
+        <label class="field-label">Highest education</label>
+        <select>
+          <option value="">Select…</option>
+          <option>High school</option>
+          <option>Diploma</option>
+          <option>Undergraduate</option>
+          <option>Postgraduate</option>
+          <option>Doctorate</option>
+          <option>Professional degree (CA / MBBS / LLB)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Field of study</label>
+        <select>
+          <option value="">Select…</option>
+          <option>Engineering / Technology</option>
+          <option>Medicine / Healthcare</option>
+          <option>Commerce / Finance</option>
+          <option>Law</option>
+          <option>Arts / Humanities</option>
+          <option>Sciences</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Employment type</label>
+      <div class="radio-group">
+        <label class="radio-row"><input type="radio" name="emp" value="salaried_private" onchange="onEmpChange(this)"> Salaried — private sector</label>
+        <label class="radio-row"><input type="radio" name="emp" value="salaried_govt" onchange="onEmpChange(this)"> Salaried — government / PSU</label>
+        <label class="radio-row"><input type="radio" name="emp" value="self_employed" onchange="onEmpChange(this)"> Self-employed / freelancer</label>
+        <label class="radio-row"><input type="radio" name="emp" value="business_owner" onchange="onEmpChange(this)"> Business owner</label>
+        <label class="radio-row"><input type="radio" name="emp" value="professional" onchange="onEmpChange(this)"> Independent professional (doctor, lawyer, CA)</label>
+        <label class="radio-row"><input type="radio" name="emp" value="not_employed" onchange="onEmpChange(this)"> Not currently employed</label>
+      </div>
+    </div>
+
+    <div class="cond cond-box" id="cond-salaried">
+      <div class="section-head">Employer benefits</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px;">
+        <label class="check-row"><input type="checkbox"> EPF enrolled (employer contributes)</label>
+        <label class="check-row"><input type="checkbox"> Gratuity eligible</label>
+        <label class="check-row"><input type="checkbox"> NPS / pension scheme enrolled</label>
+        <label class="check-row"><input type="checkbox"> Health insurance provided by employer</label>
+      </div>
+      <label class="field-label">Seniority</label>
+      <div class="seg-group">
+        <div class="seg-option"><input type="radio" name="seniority" id="sn1"><label for="sn1">Entry</label></div>
+        <div class="seg-option"><input type="radio" name="seniority" id="sn2"><label for="sn2">Mid</label></div>
+        <div class="seg-option"><input type="radio" name="seniority" id="sn3"><label for="sn3">Senior</label></div>
+        <div class="seg-option"><input type="radio" name="seniority" id="sn4"><label for="sn4">Leadership</label></div>
+      </div>
+    </div>
+
+    <div class="cond cond-box" id="cond-govt">
+      <div class="section-head">Pension scheme</div>
+      <div class="radio-group">
+        <label class="radio-row"><input type="radio" name="pension"> Old Pension Scheme (OPS)</label>
+        <label class="radio-row"><input type="radio" name="pension"> National Pension System (NPS)</label>
+        <label class="radio-row"><input type="radio" name="pension"> Not sure / not applicable</label>
+      </div>
+      <div class="note" style="margin-top:10px;">OPS secures a guaranteed pension — the retirement milestone suggestion changes accordingly.</div>
+    </div>
+
+    <hr class="divider">
+    <div class="field">
+      <label class="field-label">Investment experience</label>
+      <div class="seg-group">
+        <div class="seg-option"><input type="radio" name="inv-exp" id="ie1"><label for="ie1">Beginner</label></div>
+        <div class="seg-option"><input type="radio" name="inv-exp" id="ie2"><label for="ie2">Intermediate</label></div>
+        <div class="seg-option"><input type="radio" name="inv-exp" id="ie3"><label for="ie3">Experienced</label></div>
+      </div>
+      <div class="hint">Sets how technical explanations are — nothing else.</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Years of experience</label>
+      <input type="number" placeholder="e.g. 5" min="0" max="50" style="max-width:160px;">
+    </div>
+  </div>
+
+  <!-- ── SCREEN 2: Family Today ── -->
+  <div class="screen content" id="screen-2">
+    <div class="screen-title">Your family today</div>
+    <div class="screen-sub">Who you're currently responsible for. Asked directly — no inferences from your location or background.</div>
+
+    <div class="field">
+      <label class="field-label">Marital status</label>
+      <div class="seg-group">
+        <div class="seg-option"><input type="radio" name="marital" id="ms1" onchange="toggle('cond-spouse',false)"><label for="ms1">Single</label></div>
+        <div class="seg-option"><input type="radio" name="marital" id="ms2" onchange="toggle('cond-spouse',true)"><label for="ms2">Married</label></div>
+        <div class="seg-option"><input type="radio" name="marital" id="ms3" onchange="toggle('cond-spouse',false)"><label for="ms3">Widowed</label></div>
+        <div class="seg-option"><input type="radio" name="marital" id="ms4" onchange="toggle('cond-spouse',false)"><label for="ms4">Separated</label></div>
+      </div>
+    </div>
+
+    <div class="cond cond-box" id="cond-spouse">
+      <div class="section-head">Spouse</div>
+      <div class="field">
+        <label class="field-label">Is your spouse employed?</label>
+        <div class="seg-group">
+          <div class="seg-option"><input type="radio" name="sp-emp" id="spe1" onchange="toggle('cond-spouse-income',true)"><label for="spe1">Yes</label></div>
+          <div class="seg-option"><input type="radio" name="sp-emp" id="spe2" onchange="toggle('cond-spouse-income',false)"><label for="spe2">No</label></div>
+        </div>
+      </div>
+      <div class="cond" id="cond-spouse-income">
+        <label class="field-label">Spouse's monthly take-home (₹) <span style="font-weight:400;color:#bbb">optional</span></label>
+        <input type="number" placeholder="Amount" style="max-width:200px;">
+        <div class="hint">Only used if you want a combined household view.</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="field">
+      <label class="field-label">Do you have children?</label>
+      <div class="seg-group">
+        <div class="seg-option"><input type="radio" name="has-kids" id="hk1" onchange="toggle('cond-children',true)"><label for="hk1">Yes</label></div>
+        <div class="seg-option"><input type="radio" name="has-kids" id="hk2" onchange="toggle('cond-children',false)"><label for="hk2">No</label></div>
+      </div>
+    </div>
+    <div class="cond cond-box" id="cond-children">
+      <div class="section-head">Children</div>
+      <div id="children-list">
+        <div class="field-row col2" style="margin-bottom:8px;">
+          <div><label class="field-label">Child 1 — age</label><input type="number" placeholder="e.g. 5" min="0" max="25"></div>
+          <div style="display:flex;align-items:flex-end;"><button class="remove-btn">Remove</button></div>
+        </div>
+      </div>
+      <button class="add-btn">+ Add another child</button>
+    </div>
+
+    <hr class="divider">
+    <div class="field">
+      <label class="field-label">Are any parents financially dependent on you?</label>
+      <div class="seg-group">
+        <div class="seg-option"><input type="radio" name="parents-dep" id="pd1" onchange="toggle('cond-parents',true)"><label for="pd1">Yes</label></div>
+        <div class="seg-option"><input type="radio" name="parents-dep" id="pd2" onchange="toggle('cond-parents',false)"><label for="pd2">No</label></div>
+      </div>
+    </div>
+    <div class="cond cond-box" id="cond-parents">
+      <div class="section-head">Dependent parents</div>
+      <div id="parent-list">
+        <div class="field-row col2" style="margin-bottom:8px;">
+          <div><label class="field-label">Parent 1 — age</label><input type="number" placeholder="e.g. 62" min="40" max="100"></div>
+          <div style="display:flex;align-items:flex-end;"><button class="remove-btn">Remove</button></div>
+        </div>
+      </div>
+      <button class="add-btn">+ Add another parent</button>
+    </div>
+
+    <hr class="divider">
+    <div class="field">
+      <label class="field-label">Living situation</label>
+      <div class="radio-group">
+        <label class="radio-row"><input type="radio" name="living"> Renting — paying rent monthly</label>
+        <label class="radio-row"><input type="radio" name="living"> Own home — with active home loan EMI</label>
+        <label class="radio-row"><input type="radio" name="living"> Own home — fully owned, no EMI</label>
+        <label class="radio-row"><input type="radio" name="living"> Family home — no rent, no EMI</label>
+      </div>
+      <div class="note" style="margin-top:8px;">"Own home with EMI" → home loan must appear in Step 3 commitments. Extended loan details (rate, principal, tenure) collected in Step 6.</div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 3: Present Commitments (MANDATORY) ── -->
+  <div class="screen content" id="screen-3">
+    <div class="screen-title">Commitments today</div>
+    <div class="screen-sub">Everything leaving your account regularly — EMIs, rent, SIPs already running, insurance premiums, family support, ongoing education fees. Add each one, or confirm none.</div>
+
+    <div class="note" style="margin-bottom:18px;">This step is mandatory. Add at least one commitment or confirm NIL — blank is not accepted.</div>
+
+    <div class="commitment-list" id="present-list">
+      <div class="commitment-card">
+        <div class="commitment-card-hd"><span>Commitment 1</span><button class="remove-btn">Remove</button></div>
+        <div class="field-row col2">
+          <div>
+            <label class="field-label">Category</label>
+            <select><option>Financial</option><option>Personal</option><option>Educational</option><option>Other</option></select>
+          </div>
+          <div>
+            <label class="field-label">Label</label>
+            <input type="text" placeholder="e.g. Home loan EMI">
+          </div>
+        </div>
+        <div class="field-row col2">
+          <div>
+            <label class="field-label">Monthly amount (₹)</label>
+            <input type="number" placeholder="e.g. 18000">
+          </div>
+          <div>
+            <label class="field-label">Ends in</label>
+            <input type="text" placeholder="e.g. 12 years, ongoing">
+            <div class="hint">Write it naturally — stored as you type it.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="add-btn" onclick="addCommitment('present')">+ Add a commitment</button>
+
+    <div class="nil-wrap">
+      <button class="nil-btn" id="present-nil" onclick="toggleNil('present')">I have no present commitments (NIL)</button>
+      <div class="nil-hint">Must be confirmed explicitly if there are truly none.</div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 4: Future Commitments (MANDATORY) ── -->
+  <div class="screen content" id="screen-4">
+    <div class="screen-title">Commitments ahead</div>
+    <div class="screen-sub">What you know is coming — planned marriage, children, parent care, further education, a major purchase. Add each one, or confirm none planned.</div>
+
+    <div class="note" style="margin-bottom:18px;">This step is mandatory. Add at least one or confirm NIL.</div>
+
+    <div class="commitment-list" id="future-list">
+      <div class="commitment-card">
+        <div class="commitment-card-hd"><span>Future commitment 1</span><button class="remove-btn">Remove</button></div>
+        <div class="field-row col2">
+          <div>
+            <label class="field-label">Category</label>
+            <select><option>Financial</option><option>Personal</option><option>Educational</option><option>Other</option></select>
+          </div>
+          <div>
+            <label class="field-label">Label</label>
+            <input type="text" placeholder="e.g. Planned marriage">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label class="field-label">Description <span style="font-weight:400;color:#bbb">optional</span></label>
+          <input type="text" placeholder="Any detail that helps describe this">
+        </div>
+        <div class="field-row col2">
+          <div>
+            <label class="field-label">Expected in</label>
+            <input type="text" placeholder="e.g. 3 years, someday">
+            <div class="hint">Write naturally — stored as entered.</div>
+          </div>
+          <div>
+            <label class="field-label">Est. monthly impact (₹) <span style="font-weight:400;color:#bbb">optional</span></label>
+            <input type="number" placeholder="If you know it">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="add-btn" onclick="addCommitment('future')">+ Add a future commitment</button>
+
+    <div class="nil-wrap">
+      <button class="nil-btn" id="future-nil" onclick="toggleNil('future')">I have no planned future commitments (NIL)</button>
+      <div class="nil-hint">Must be confirmed explicitly if there are truly none.</div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 5: Money ── -->
+  <div class="screen content" id="screen-5">
+    <div class="screen-title">Your money</div>
+    <div class="screen-sub">Monthly income and spending. We derive your investable capacity — not asking for it directly, which tends to produce aspirational answers.</div>
+
+    <div class="field-row col2">
+      <div class="field">
+        <label class="field-label">Monthly gross income (₹)</label>
+        <input type="number" placeholder="Before tax / PF">
+      </div>
+      <div class="field">
+        <label class="field-label">Monthly take-home (₹)</label>
+        <input type="number" placeholder="Actual cash received">
+        <div class="hint">Post-tax, post-PF — what lands in your account.</div>
+      </div>
+    </div>
+
+    <div class="field" id="income-stability-row" style="display:none;">
+      <label class="field-label">How stable is your income?</label>
+      <div class="seg-group">
+        <div class="seg-option"><input type="radio" name="stability" id="st1"><label for="st1">Very stable</label></div>
+        <div class="seg-option"><input type="radio" name="stability" id="st2"><label for="st2">Moderate swings</label></div>
+        <div class="seg-option"><input type="radio" name="stability" id="st3"><label for="st3">Highly variable</label></div>
+      </div>
+      <div class="hint">Average over last 12 months. Passed to milestone suggestions to calibrate income-risk rationale.</div>
+      <div class="note" style="margin-top:8px;">Shown only for self-employed, business owners, independent professionals.</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Monthly living expenses (₹)</label>
+      <input type="number" placeholder="Groceries / utilities / rent / discretionary">
+      <div class="hint">Exclude your Step 3 commitments — those are already counted separately.</div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-head">Your investable capacity</div>
+    <div class="derived-box">
+      <div class="derived-amount">₹ 22,400 / month</div>
+      <div class="derived-breakdown">take-home ₹68,000 − living ₹28,000 − commitments ₹17,600</div>
+      <span class="derived-edit" onclick="toggle('cond-override',true)">This looks off — let me correct it ↓</span>
+    </div>
+    <div class="cond" id="cond-override" style="margin-top:12px;">
+      <label class="field-label">Override investable capacity (₹)</label>
+      <input type="number" placeholder="Your actual number" style="max-width:200px;">
+      <div class="hint">Use this only if the derived figure doesn't reflect your real situation.</div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 6: What You Have (Optional) ── -->
+  <div class="screen content" id="screen-6">
+    <div class="screen-title">What you already have</div>
+    <div class="screen-sub">A snapshot of current investments and coverage. All optional — the more you fill in, the more specific the suggestions. Skip the whole step if you prefer.</div>
+
+    <div class="section-head">Investments — balances</div>
+    <div class="field-row col2">
+      <div class="field"><label class="field-label">EPF balance (₹)</label><input type="number" placeholder="If known"></div>
+      <div class="field"><label class="field-label">PPF balance (₹)</label><input type="number" placeholder="If known"></div>
+    </div>
+    <div class="field-row col2">
+      <div class="field"><label class="field-label">NPS balance (₹)</label><input type="number" placeholder="If known"></div>
+      <div class="field"><label class="field-label">Mutual funds — value (₹)</label><input type="number" placeholder="If known"></div>
+    </div>
+    <div class="field-row col2">
+      <div class="field"><label class="field-label">Fixed deposits (₹)</label><input type="number" placeholder="If known"></div>
+      <div class="field"><label class="field-label">Direct equities — value (₹)</label><input type="number" placeholder="If known"></div>
+    </div>
+    <div class="field-row col2">
+      <div class="field"><label class="field-label">Gold / silver (₹)</label><input type="number" placeholder="If known"></div>
+      <div class="field">
+        <label class="field-label">Investment real estate (₹)</label>
+        <input type="number" placeholder="Not primary home">
+        <div class="hint">Primary residence is not counted as an investable asset.</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-head">EPF / PPF contributions <span style="font-weight:400;text-transform:none;font-size:11px;color:#aaa">— needed for Phase 2 retirement projection</span></div>
+    <div class="note" style="margin-bottom:12px;">Balances alone aren't enough to project your EPF/PPF corpus at retirement — we also need how much is going in each month/year.</div>
+    <div class="field-row col2">
+      <div class="field">
+        <label class="field-label">EPF — your monthly contribution (₹)</label>
+        <input type="number" placeholder="Your 12% share">
+        <div class="hint">Employee's share only — typically 12% of basic salary.</div>
+      </div>
+      <div class="field">
+        <label class="field-label">EPF — employer monthly contribution (₹)</label>
+        <input type="number" placeholder="Employer's 12% share">
+      </div>
+    </div>
+    <div class="field" style="max-width:260px;">
+      <label class="field-label">PPF — annual deposit (₹)</label>
+      <input type="number" placeholder="Yearly amount, if active">
+    </div>
+
+    <hr class="divider">
+    <div class="section-head">Home loan details <span style="font-weight:400;text-transform:none;font-size:11px;color:#aaa">— needed for Phase 3 prepayment tradeoff</span></div>
+    <div class="note" style="margin-bottom:12px;">Shown because you selected "own home with active EMI" in Step 2. These fields let Phase 3 compute the effective loan cost after tax benefit and compare it against investing the same amount.</div>
+    <div class="field-row col3">
+      <div class="field">
+        <label class="field-label">Interest rate (% p.a.)</label>
+        <input type="number" placeholder="e.g. 8.5" step="0.1">
+      </div>
+      <div class="field">
+        <label class="field-label">Outstanding principal (₹)</label>
+        <input type="number" placeholder="Current balance">
+      </div>
+      <div class="field">
+        <label class="field-label">Remaining tenure</label>
+        <input type="number" placeholder="Months">
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-head">Tax details <span style="font-weight:400;text-transform:none;font-size:11px;color:#aaa">— needed for Phase 3 tax gap flagging</span></div>
+    <div class="note" style="margin-bottom:12px;">Used to compute your 80C headroom, 80D status, and whether old or new regime is better for you. All deterministic — no AI.</div>
+    <div class="field">
+      <label class="field-label">Current tax regime preference</label>
+      <div class="seg-group" style="max-width:280px;">
+        <div class="seg-option"><input type="radio" name="tax-regime" id="tr1"><label for="tr1">Old regime</label></div>
+        <div class="seg-option"><input type="radio" name="tax-regime" id="tr2"><label for="tr2">New regime</label></div>
+        <div class="seg-option"><input type="radio" name="tax-regime" id="tr3"><label for="tr3">Not sure</label></div>
+      </div>
+    </div>
+    <div class="field-row col2">
+      <div class="field">
+        <label class="field-label">Other 80C investments (₹/yr) <span style="font-weight:400;color:#bbb">optional</span></label>
+        <input type="number" placeholder="ELSS, tax-saver FD, etc.">
+        <div class="hint">Don't include PPF or home loan principal — those are already counted.</div>
+      </div>
+      <div class="field">
+        <label class="field-label">HRA part of your salary?</label>
+        <div class="seg-group">
+          <div class="seg-option"><input type="radio" name="hra" id="hra1"><label for="hra1">Yes</label></div>
+          <div class="seg-option"><input type="radio" name="hra" id="hra2"><label for="hra2">No</label></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-head">Insurance</div>
+    <div class="field-row col2">
+      <div class="field">
+        <label class="field-label">Term cover amount (₹)</label>
+        <input type="number" placeholder="0 if none">
+        <div class="hint">Pure term only — not endowment or ULIP.</div>
+      </div>
+      <div class="field">
+        <label class="field-label">Health cover (₹)</label>
+        <input type="number" placeholder="Own + family floater">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Do you hold any life insurance? (endowment, ULIP, LIC)</label>
+      <div class="seg-group" style="max-width:200px;">
+        <div class="seg-option"><input type="radio" name="life-ins" id="li1"><label for="li1">Yes</label></div>
+        <div class="seg-option"><input type="radio" name="life-ins" id="li2"><label for="li2">No</label></div>
+      </div>
+      <div class="hint">Investment-linked life insurance — not term.</div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 7: Goals ── -->
+  <div class="screen content" id="screen-7">
+    <div class="screen-title">What do you want your money to do?</div>
+    <div class="screen-sub">Type each goal in plain language, one at a time. Don't worry about formatting — we'll parse what you mean and ask if anything's unclear.</div>
+
+    <div class="goal-list" id="goal-list">
+      <div class="goal-item">
+        <span>Buy a home in Chennai in about 7 years — around ₹80 lakhs</span>
+        <span class="goal-badge">Home purchase</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Add a goal</label>
+      <textarea id="goal-input" placeholder="e.g. I want to retire by 55 with ₹1.5 crore saved, or I need to fund my daughter's college in 12 years, or I want to do an international trip every two years…"></textarea>
+    </div>
+
+    <!-- Inline clarification — shown when parse_confidence = "low" -->
+    <div class="clarify-card" id="clarify-card">
+      <div class="clarify-title">We need one more detail to understand this goal</div>
+      <div style="margin-bottom:12px;">
+        <div class="parsed-row"><span class="parsed-key">Goal type</span><span class="parsed-val">Retirement</span></div>
+        <div class="parsed-row"><span class="parsed-key">Timeline</span><span class="parsed-val">Age 55 → approx. 27 years from now</span></div>
+        <div class="parsed-row"><span class="parsed-key">Target amount</span><span class="parsed-missing">Not stated — what monthly income do you want in retirement?</span></div>
+      </div>
+      <div class="field">
+        <label class="field-label">Expected monthly income in retirement (₹)</label>
+        <input type="number" placeholder="e.g. 80,000 per month">
+        <div class="hint">We'll use this to work out the corpus you'd need.</div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-approve" onclick="confirmGoal()">Got it — add this goal</button>
+        <button class="btn-skip" onclick="hideClarify()">Skip this goal</button>
+      </div>
+      <div class="note" style="margin-top:10px;">The user cannot advance past a low-confidence goal without clarifying or explicitly skipping it.</div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:14px;" id="goal-actions">
+      <button class="btn-primary" onclick="showClarify()">Parse this goal →</button>
+    </div>
+
+    <div class="note" style="margin-top:18px;">At least one confirmed goal (confidence ≥ medium) is required before continuing to milestone suggestions.</div>
+  </div>
+
+  <!-- ── SCREEN 8: Approval Queue ── -->
+  <div class="screen content" id="screen-8">
+    <div class="screen-title">Milestone suggestions</div>
+    <div class="screen-sub">Based on what you've told us. Review each one — nothing is added to your plan without your approval. Skipped suggestions are remembered, not deleted.</div>
+
+    <div class="approval-summary" id="approval-summary">0 approved · 0 skipped</div>
+
+    <div class="milestone-card" id="mc1">
+      <div class="milestone-hd">
+        <span class="source-badge badge-rule">Identified</span>
+      </div>
+      <div class="milestone-title">Build an emergency fund</div>
+      <div class="milestone-rationale">No emergency buffer appears in your goals. With ₹28,000/month in living expenses and an active home loan EMI, a 6-month buffer — around ₹2.7 lakhs — covers you if income stops. Without it, you'd need to break investments or take a loan.</div>
+      <div class="milestone-actions" id="ma1">
+        <button class="btn-approve" onclick="approve('mc1','ma1')">Add to plan</button>
+        <button class="btn-skip" onclick="skip('mc1','ma1')">Skip for now</button>
+      </div>
+    </div>
+
+    <div class="milestone-card" id="mc2">
+      <div class="milestone-hd">
+        <span class="source-badge badge-ai">Suggested</span>
+      </div>
+      <div class="milestone-title">Term life cover — you have dependents</div>
+      <div class="milestone-rationale">You have a spouse, a child (age 5), and a dependent parent (age 62). Your home loan runs 12 more years. If your income stopped, these obligations wouldn't. A term cover of 10–15× annual income — roughly ₹1–1.5 crore — would protect them for the loan tenure and beyond.</div>
+      <div class="milestone-actions" id="ma2">
+        <button class="btn-approve" onclick="approve('mc2','ma2')">Add to plan</button>
+        <button class="btn-skip" onclick="skip('mc2','ma2')">Skip for now</button>
+      </div>
+    </div>
+
+    <div class="milestone-card" id="mc3">
+      <div class="milestone-hd">
+        <span class="source-badge badge-ai">Suggested</span>
+      </div>
+      <div class="milestone-title">Education fund for your child</div>
+      <div class="milestone-rationale">Your child is 5 — college is 13 years away. Private engineering or medicine today costs ₹20–40 lakhs; inflation will push that higher. A dedicated SIP started now compounds over the full horizon. You haven't listed this as a goal yet.</div>
+      <div class="milestone-actions" id="ma3">
+        <button class="btn-approve" onclick="approve('mc3','ma3')">Add to plan</button>
+        <button class="btn-skip" onclick="skip('mc3','ma3')">Skip for now</button>
+      </div>
+    </div>
+
+    <div class="milestone-card" id="mc4">
+      <div class="milestone-hd">
+        <span class="source-badge badge-ai">Suggested</span>
+      </div>
+      <div class="milestone-title">Parent care buffer — plan ahead</div>
+      <div class="milestone-rationale">Your parent is 62. Healthcare costs typically rise sharply in the 70s. Without dedicated savings, a medical event in that window would compete directly with your home goal or your child's education fund. Even a small monthly earmark now reduces that collision risk.</div>
+      <div class="milestone-actions" id="ma4">
+        <button class="btn-approve" onclick="approve('mc4','ma4')">Add to plan</button>
+        <button class="btn-skip" onclick="skip('mc4','ma4')">Skip for now</button>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:4px;">"Identified" = deterministic rule engine. "Suggested" = AI judgment. Both require explicit user approval. Max 3 AI suggestions (hard cap). Source label always visible.</div>
+  </div>
+
+  <!-- ── SCREEN 9: Plan ── -->
+  <div class="screen content" id="screen-9">
+    <div class="screen-title">Your plan</div>
+    <div class="screen-sub">What you've approved. Phase 2 will map the path to each goal and show what's feasible.</div>
+
+    <div class="section-head">Goals</div>
+    <div class="goal-list" style="margin-bottom:22px;">
+      <div class="goal-item"><span>Buy a home in Chennai in 7 years — ₹80 lakhs</span><span class="goal-badge">Home purchase</span></div>
+      <div class="goal-item"><span>Retire at 55 — ₹80,000/month income</span><span class="goal-badge">Retirement</span></div>
+    </div>
+
+    <div class="section-head">Life event timeline</div>
+    <div style="margin-bottom:24px;">
+      <div class="note" style="margin-bottom:12px;">Goals and future commitments on one forward axis — conflicts visible before Phase 2 math runs.</div>
+      <div style="position:relative; padding: 32px 0 48px;">
+        <!-- axis line -->
+        <div style="position:absolute; top:42px; left:0; right:0; height:2px; background:#ddd;"></div>
+        <!-- today marker -->
+        <div style="position:absolute; top:30px; left:0; text-align:center; width:40px; margin-left:-20px;">
+          <div style="width:10px;height:10px;background:#888;border-radius:50%;margin:0 auto;"></div>
+          <div style="font-size:10px;color:#999;margin-top:4px;">Today</div>
+        </div>
+        <!-- events (positioned as % of 30-year horizon) -->
+        <!-- 3yr marriage: 10% -->
+        <div style="position:absolute; top:22px; left:10%;">
+          <div style="width:10px;height:10px;background:#d4920a;border-radius:50%;margin:0 auto;"></div>
+          <div style="font-size:10px;font-weight:600;color:#9a6800;margin-top:4px;white-space:nowrap;">3 yr</div>
+          <div style="font-size:10px;color:#666;white-space:nowrap;">Planned</div>
+          <div style="font-size:10px;color:#666;white-space:nowrap;">marriage</div>
+        </div>
+        <!-- 7yr home: 23% -->
+        <div style="position:absolute; top:22px; left:23%;">
+          <div style="width:10px;height:10px;background:#222;border-radius:50%;margin:0 auto;"></div>
+          <div style="font-size:10px;font-weight:600;color:#222;margin-top:4px;white-space:nowrap;">7 yr</div>
+          <div style="font-size:10px;color:#222;white-space:nowrap;">Home</div>
+          <div style="font-size:10px;color:#222;white-space:nowrap;">purchase</div>
+        </div>
+        <!-- 8yr parent care: 27% — overlapping with home -->
+        <div style="position:absolute; top:22px; left:27%;">
+          <div style="width:10px;height:10px;background:#d4920a;border-radius:50%;margin:0 auto;"></div>
+          <div style="font-size:10px;font-weight:600;color:#9a6800;margin-top:4px;white-space:nowrap;">8 yr</div>
+          <div style="font-size:10px;color:#666;white-space:nowrap;">Parent</div>
+          <div style="font-size:10px;color:#666;white-space:nowrap;">care</div>
+        </div>
+        <!-- 13yr child college: 43% -->
+        <div style="position:absolute; top:22px; left:43%;">
+          <div style="width:10px;height:10px;background:#d4920a;border-radius:50%;margin:0 auto;"></div>
+          <div style="font-size:10px;font-weight:600;color:#9a6800;margin-top:4px;white-space:nowrap;">13 yr</div>
+          <div style="font-size:10px;color:#666;white-space:nowrap;">Child's</div>
+          <div style="font-size:10px;color:#666;white-space:nowrap;">college</div>
+        </div>
+        <!-- 27yr retirement: 90% -->
+        <div style="position:absolute; top:22px; left:90%;">
+          <div style="width:10px;height:10px;background:#222;border-radius:50%;margin:0 auto;"></div>
+          <div style="font-size:10px;font-weight:600;color:#222;margin-top:4px;white-space:nowrap;">27 yr</div>
+          <div style="font-size:10px;color:#222;white-space:nowrap;">Retire</div>
+          <div style="font-size:10px;color:#222;white-space:nowrap;">at 55</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;font-size:11px;color:#777;margin-top:8px;">
+        <span><span style="display:inline-block;width:8px;height:8px;background:#222;border-radius:50%;margin-right:4px;"></span>Goal</span>
+        <span><span style="display:inline-block;width:8px;height:8px;background:#d4920a;border-radius:50%;margin-right:4px;"></span>Future commitment</span>
+      </div>
+      <div class="note" style="margin-top:8px;">Home purchase (7 yr) and parent care onset (8 yr) are close — worth checking in Phase 2 whether both are feasible from the same monthly capacity.</div>
+    </div>
+
+    <div class="section-head">Milestones</div>
+    <div id="plan-milestones">
+      <!-- populated dynamically from approval decisions -->
+    </div>
+    <div id="plan-none" style="display:none;font-size:13px;color:#999;padding:12px 0;">No milestones approved — go back and review the suggestions.</div>
+
+    <div class="note" style="margin-top:20px;">🌑 = not started. Only milestones you approved appear here. Skipped suggestions are stored and can re-surface in Phase 6.</div>
+
+    <div class="disclaimer">
+      <strong>Disclaimer:</strong> Madhi is an educational and informational tool. Nothing here constitutes financial advice, investment advice, or a recommendation to buy or sell any product or security. All suggestions require explicit approval before appearing in this plan. This is not a substitute for professional financial advice.
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <button class="btn-secondary" id="back-btn" onclick="nav(-1)" style="visibility:hidden;">Back</button>
+    <div style="display:flex;gap:12px;align-items:center;margin-left:auto;">
+      <button class="btn-text" id="skip-btn" style="display:none;" onclick="nav(1)">Skip for now</button>
+      <button class="btn-primary" id="next-btn" onclick="nav(1)">Continue</button>
+    </div>
+  </div>
+
+</div>
+<script>
+let cur = 1;
+const TOTAL = 9;
+let approved = 0, skipped = 0;
+
+const nextLabels = {
+  7: 'See milestone suggestions',
+  8: 'See my plan',
+  9: ''
+};
+const skipable = [6];
+
+const milestoneData = {
+  mc1: { title: 'Emergency fund',       note: '6-month buffer · ₹2.7 lakhs · Not started' },
+  mc2: { title: 'Term life cover',      note: 'Protect dependents and loan tenure · Not in place' },
+  mc3: { title: "Child's education fund", note: '13-year horizon · No dedicated savings yet' },
+  mc4: { title: 'Parent care buffer',   note: 'Parent age 62 · Earmark for future healthcare' },
+};
+
+function allMilestonesDecided() {
+  return ['mc1','mc2','mc3','mc4'].every(id => {
+    const c = document.getElementById(id);
+    return c.classList.contains('approved') || c.classList.contains('skipped');
+  });
+}
+
+function renderPlan() {
+  const container = document.getElementById('plan-milestones');
+  const none = document.getElementById('plan-none');
+  container.innerHTML = '';
+  let count = 0;
+  ['mc1','mc2','mc3','mc4'].forEach(id => {
+    if (document.getElementById(id).classList.contains('approved')) {
+      count++;
+      const d = milestoneData[id];
+      container.innerHTML += `<div class="plan-item"><div class="moon">🌑</div><div class="plan-body"><div class="plan-title">${d.title}</div><div class="plan-note">${d.note}</div></div></div>`;
+    }
+  });
+  none.style.display = count === 0 ? 'block' : 'none';
+}
+
+function nav(dir) {
+  // Approval gate: block Screen 8 → 9 until all cards are decided
+  if (cur === 8 && dir === 1 && !allMilestonesDecided()) {
+    const btn = document.getElementById('next-btn');
+    btn.textContent = 'Decide all milestones first';
+    btn.style.background = '#c05000';
+    setTimeout(() => { btn.textContent = 'See my plan'; btn.style.background = ''; }, 2200);
+    return;
+  }
+  document.getElementById('screen-' + cur).classList.remove('active');
+  cur += dir;
+  if (cur < 1) cur = 1;
+  if (cur > TOTAL) cur = TOTAL;
+  if (cur === 9) renderPlan();
+  document.getElementById('screen-' + cur).classList.add('active');
+  updateChrome();
+}
+
+function updateChrome() {
+  const stepNum = Math.min(cur, 7);
+  const pct = Math.round((cur / TOTAL) * 100);
+  document.getElementById('step-label').textContent =
+    cur <= 7 ? 'Step ' + cur + ' of 7' :
+    cur === 8 ? 'Review milestones' : 'Your plan';
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('back-btn').style.visibility = cur > 1 ? 'visible' : 'hidden';
+  document.getElementById('skip-btn').style.display = skipable.includes(cur) ? 'inline' : 'none';
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.textContent = nextLabels[cur] !== undefined ? nextLabels[cur] : 'Continue';
+  nextBtn.style.display = cur === 9 ? 'none' : 'inline-flex';
+}
+
+function toggle(id, show) {
+  document.getElementById(id).classList.toggle('show', show);
+}
+
+function onEmpChange(radio) {
+  const v = radio.value;
+  toggle('cond-salaried', v === 'salaried_private');
+  toggle('cond-govt', v === 'salaried_govt');
+  document.getElementById('income-stability-row').style.display =
+    ['self_employed','business_owner','professional'].includes(v) ? 'block' : 'none';
+}
+
+function toggleNil(type) {
+  document.getElementById(type + '-nil').classList.toggle('on');
+}
+
+let commitCounts = { present: 1, future: 1 };
+function addCommitment(type) {
+  commitCounts[type]++;
+  const n = commitCounts[type];
+  const list = document.getElementById(type + '-list');
+  const div = document.createElement('div');
+  div.className = 'commitment-card';
+  div.innerHTML = `
+    <div class="commitment-card-hd"><span>Commitment ${n}</span><button class="remove-btn" onclick="this.closest('.commitment-card').remove()">Remove</button></div>
+    <div class="field-row col2">
+      <div><label class="field-label">Category</label><select><option>Financial</option><option>Personal</option><option>Educational</option><option>Other</option></select></div>
+      <div><label class="field-label">Label</label><input type="text" placeholder="${type === 'future' ? 'e.g. Planned marriage' : 'e.g. SIP — mutual fund'}"></div>
+    </div>
+    ${type === 'future' ? '<div class="field" style="margin-bottom:14px;"><label class="field-label">Description <span style="font-weight:400;color:#bbb">optional</span></label><input type="text" placeholder="Any detail"></div>' : ''}
+    <div class="field-row col2">
+      <div><label class="field-label">${type === 'future' ? 'Expected in' : 'Monthly amount (₹)'}</label><input type="${type === 'future' ? 'text' : 'number'}" placeholder="${type === 'future' ? 'e.g. 3 years, someday' : 'e.g. 5000'}"></div>
+      <div><label class="field-label">${type === 'future' ? 'Est. monthly impact (₹) optional' : 'Ends in'}</label><input type="${type === 'future' ? 'number' : 'text'}" placeholder="${type === 'future' ? 'If known' : 'e.g. 8 years, ongoing'}"></div>
+    </div>`;
+  list.appendChild(div);
+}
+
+function showClarify() {
+  document.getElementById('clarify-card').style.display = 'block';
+  document.getElementById('goal-actions').style.display = 'none';
+}
+function hideClarify() {
+  document.getElementById('clarify-card').style.display = 'none';
+  document.getElementById('goal-actions').style.display = 'flex';
+}
+function confirmGoal() {
+  const list = document.getElementById('goal-list');
+  const item = document.createElement('div');
+  item.className = 'goal-item';
+  item.innerHTML = '<span>Retire at 55 — ₹80,000/month income in retirement</span><span class="goal-badge">Retirement</span>';
+  list.appendChild(item);
+  document.getElementById('goal-input').value = '';
+  hideClarify();
+}
+
+function updateApprovalSummary() {
+  document.getElementById('approval-summary').textContent = approved + ' approved · ' + skipped + ' skipped';
+}
+function approve(cardId, actionsId) {
+  const card = document.getElementById(cardId);
+  const was = card.classList.contains('approved') ? 'approved' : card.classList.contains('skipped') ? 'skipped' : 'none';
+  if (was === 'skipped') skipped--;
+  if (was !== 'approved') approved++;
+  card.classList.remove('skipped'); card.classList.add('approved');
+  document.getElementById(actionsId).innerHTML =
+    '<span style="font-size:12px;color:#2a6a2a;font-weight:600;">✓ Added to plan</span>' +
+    '<button class="btn-text" style="font-size:11px;" onclick="undo(\'' + cardId + '\',\'' + actionsId + '\')">Undo</button>';
+  updateApprovalSummary();
+}
+function skip(cardId, actionsId) {
+  const card = document.getElementById(cardId);
+  const was = card.classList.contains('approved') ? 'approved' : card.classList.contains('skipped') ? 'skipped' : 'none';
+  if (was === 'approved') approved--;
+  if (was !== 'skipped') skipped++;
+  card.classList.remove('approved'); card.classList.add('skipped');
+  document.getElementById(actionsId).innerHTML =
+    '<span style="font-size:12px;color:#aaa;">Skipped</span>' +
+    '<button class="btn-text" style="font-size:11px;" onclick="undo(\'' + cardId + '\',\'' + actionsId + '\')">Undo</button>';
+  updateApprovalSummary();
+}
+function undo(cardId, actionsId) {
+  const card = document.getElementById(cardId);
+  if (card.classList.contains('approved')) approved--;
+  if (card.classList.contains('skipped')) skipped--;
+  card.classList.remove('approved','skipped');
+  document.getElementById(actionsId).innerHTML =
+    '<button class="btn-approve" onclick="approve(\'' + cardId + '\',\'' + actionsId + '\')">Add to plan</button>' +
+    '<button class="btn-skip" onclick="skip(\'' + cardId + '\',\'' + actionsId + '\')">Skip for now</button>';
+  updateApprovalSummary();
+}
+
+updateChrome();
+</script>
+</body>
+</html>

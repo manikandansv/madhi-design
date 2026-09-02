@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Madhi — System Architecture</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #F0F2F5;
+    padding: 40px 24px;
+    color: #1a1a1a;
+  }
+  .page { max-width: 1200px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .doc-header { margin-bottom: 32px; }
+  .doc-title { font-size: 22px; font-weight: 700; color: #111; letter-spacing: -0.3px; }
+  .doc-meta { font-size: 13px; color: #888; margin-top: 4px; }
+  .doc-note {
+    display: inline-block; margin-top: 10px;
+    padding: 6px 14px; background: #fff3cd;
+    border: 1px solid #ffc107; border-radius: 5px;
+    font-size: 12px; color: #7a5c00;
+  }
+
+  /* ── Section titles ── */
+  .section-gap { height: 0; }
+  .layer-connector {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 4px 0; position: relative;
+  }
+  .connector-line { width: 2px; height: 24px; background: #999; }
+  .connector-arrow {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #999;
+  }
+  .connector-label {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    left: calc(50% + 18px); background: #fff;
+    border: 1px solid #ddd; border-radius: 5px;
+    padding: 3px 10px; font-size: 11px; color: #666;
+    white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  /* ── Generic layer ── */
+  .layer { border-radius: 12px; padding: 22px; position: relative; }
+  .layer-label {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px;
+  }
+  .layer-sublabel { font-size: 12px; font-weight: 500; color: #777; margin-bottom: 14px; }
+
+  /* ── Cards ── */
+  .card-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .card {
+    flex: 1; min-width: 160px;
+    background: #fff; border-radius: 10px; padding: 14px;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .card.future { border-style: dashed; background: #FAFAFA; }
+  .card-title {
+    font-size: 13px; font-weight: 700; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .card-icon {
+    width: 22px; height: 22px; border-radius: 5px;
+    display: inline-flex; align-items: center;
+    justify-content: center; font-size: 12px; flex-shrink: 0;
+  }
+  .card ul { list-style: none; padding: 0; }
+  .card ul li {
+    font-size: 11px; color: #555; padding: 2px 0 2px 12px;
+    position: relative; line-height: 1.5;
+  }
+  .card ul li::before { content: '–'; position: absolute; left: 0; color: #bbb; }
+  .card-tag {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 1px 7px; border-radius: 10px; margin-top: 8px;
+  }
+  .mono {
+    font-family: 'Courier New', monospace; font-size: 10.5px;
+    background: #f5f5f5; padding: 1px 5px; border-radius: 3px;
+  }
+  .phase-badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 1px 6px; border-radius: 8px; margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  /* ── CLIENT (blue) ── */
+  .layer-client { background: #EBF5FB; border: 1.5px solid #2980B9; }
+  .layer-client .layer-label { background: #2980B9; color: #fff; }
+  .layer-client .card { border-color: #AED6F1; }
+  .layer-client .card-title { color: #1A5276; }
+  .layer-client .card-icon { background: #D6EAF8; color: #1A5276; }
+  .layer-client .card-tag { background: #D6EAF8; color: #1A5276; }
+
+  /* ── BACKEND (gray) ── */
+  .layer-backend { background: #F4F6F7; border: 1.5px solid #566573; }
+  .layer-backend .layer-label { background: #566573; color: #fff; }
+  .layer-backend .card { border-color: #BDC3C7; }
+  .layer-backend .card-title { color: #2C3E50; }
+  .layer-backend .card-icon { background: #E5E8EA; color: #2C3E50; }
+  .layer-backend .card-tag { background: #E5E8EA; color: #2C3E50; }
+
+  /* ── FOUNDATION MODEL (green) ── */
+  .layer-model { background: #EAFAF1; border: 1.5px solid #27AE60; }
+  .layer-model .layer-label { background: #27AE60; color: #fff; }
+  .layer-model .card { border-color: #A9DFBF; }
+  .layer-model .card-title { color: #1E8449; }
+  .layer-model .card-icon { background: #D5F5E3; color: #1E8449; }
+  .layer-model .card-tag { background: #D5F5E3; color: #1E8449; }
+  .layer-model .card.future .card-title { color: #7DCEA0; }
+
+  /* ── DATA LAYER (amber) ── */
+  .layer-data { background: #FEF9E7; border: 1.5px solid #D4AC0D; }
+  .layer-data .layer-label { background: #D4AC0D; color: #fff; }
+  .layer-data .card { border-color: #F9E79F; }
+  .layer-data .card-title { color: #7D6608; }
+  .layer-data .card-icon { background: #FEF9E7; color: #7D6608; border: 1px solid #F9E79F; }
+  .layer-data .card-tag { background: #FEF9E7; color: #7D6608; border: 1px solid #F9E79F; }
+  .layer-data .card.future { border-color: #F9E79F; }
+  .layer-data .card.future .card-title { color: #CDA434; }
+
+  /* ── STREAMING LAYER (teal) ── */
+  .layer-stream { background: #E8F8F5; border: 1.5px solid #17A589; }
+  .layer-stream .layer-label { background: #17A589; color: #fff; }
+  .layer-stream .card { border-color: #A2D9CE; }
+  .layer-stream .card-title { color: #0E6655; }
+  .layer-stream .card-icon { background: #D1F2EB; color: #0E6655; }
+  .layer-stream .card-tag { background: #D1F2EB; color: #0E6655; }
+  .layer-stream .card.future { border-color: #A2D9CE; }
+  .layer-stream .card.future .card-title { color: #45B39D; }
+  .layer-stream .card.not-used { background: #F9F9F9; border-color: #ddd; }
+  .layer-stream .card.not-used .card-title { color: #aaa; }
+  .layer-stream .card.not-used .card-tag { background: #eee; color: #aaa; }
+
+  /* ── AI WRAPPER ── */
+  .ai-wrapper {
+    margin-top: 12px; background: #FDFEFE;
+    border: 1.5px dashed #95A5A6; border-radius: 10px; padding: 14px;
+  }
+  .ai-wrapper-title {
+    font-size: 11px; font-weight: 700; color: #7F8C8D;
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ai-wrapper-title span { flex: 1; height: 1px; background: #ddd; }
+
+  .ai-mode-label {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.7px;
+    padding: 2px 10px; border-radius: 10px; margin-bottom: 8px;
+  }
+  .ai-mode-a { background: #EBF5FB; color: #1A5276; border: 1px solid #AED6F1; }
+  .ai-mode-b { background: #F5EEF8; color: #6C3483; border: 1px solid #D2B4DE; }
+
+  .ai-flow { display: flex; align-items: stretch; gap: 0; }
+  .ai-step {
+    flex: 1; background: #fff; border: 1px solid #D5D8DC;
+    border-radius: 8px; padding: 10px; text-align: center;
+  }
+  .ai-step-num {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #566573; color: #fff; font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 5px;
+  }
+  .ai-step-name { font-size: 11px; font-weight: 700; color: #2C3E50; margin-bottom: 3px; }
+  .ai-step-desc { font-size: 10px; color: #777; line-height: 1.3; }
+  .ai-step-arrow { display: flex; align-items: center; padding: 0 5px; color: #aaa; font-size: 16px; flex-shrink: 0; }
+
+  /* Agentic loop */
+  .agent-wrapper {
+    margin-top: 10px; background: #F9F5FD;
+    border: 1.5px dashed #C39BD3; border-radius: 10px; padding: 12px;
+  }
+  .agent-flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+  .agent-step {
+    flex: 1; min-width: 90px; background: #fff;
+    border: 1px solid #D7BDE2; border-radius: 7px; padding: 8px; text-align: center;
+  }
+  .agent-step-name { font-size: 10px; font-weight: 700; color: #6C3483; margin-bottom: 2px; }
+  .agent-step-desc { font-size: 9.5px; color: #999; line-height: 1.3; }
+  .agent-arrow { padding: 0 4px; color: #C39BD3; font-size: 14px; flex-shrink: 0; }
+  .agent-loop-label {
+    font-size: 9.5px; color: #9B59B6; font-weight: 600;
+    text-align: center; margin-top: 8px; padding: 3px 0;
+    border-top: 1px dashed #D7BDE2;
+  }
+  .agent-use-cases { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .agent-use-case {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    background: #F5EEF8; border: 1px solid #D7BDE2; color: #6C3483;
+  }
+  .agent-use-case.future {
+    background: transparent; border-style: dashed; color: #C39BD3;
+  }
+
+  /* Context file callout */
+  .context-file {
+    margin-top: 10px; padding: 8px 12px; background: #FEF9E7;
+    border: 1px solid #F9E79F; border-radius: 7px;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .context-file-icon { font-size: 16px; flex-shrink: 0; }
+  .context-file-name { font-size: 11px; font-weight: 700; color: #7D6608; font-family: monospace; }
+  .context-file-desc { font-size: 10.5px; color: #7a6000; margin-top: 2px; line-height: 1.4; }
+
+  /* ── Three-column lower section ── */
+  .lower-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 0;
+  }
+  .lower-connector-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .lower-connector {
+    display: flex; flex-direction: column; align-items: center; padding: 4px 0;
+  }
+
+  /* ── Data node cards (compact) ── */
+  .db-card {
+    background: #fff; border-radius: 9px; padding: 12px;
+    border: 1px solid #F9E79F; margin-bottom: 8px;
+  }
+  .db-card:last-child { margin-bottom: 0; }
+  .db-card-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .db-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .db-name { font-size: 12px; font-weight: 700; color: #7D6608; }
+  .db-role { font-size: 10px; color: #999; }
+  .db-items { font-size: 10.5px; color: #666; line-height: 1.5; padding-left: 0; list-style: none; }
+  .db-items li { padding: 1px 0 1px 10px; position: relative; }
+  .db-items li::before { content: '–'; position: absolute; left: 0; color: #ddd; }
+  .db-phase { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px; margin-top: 6px; display: inline-block; }
+  .phase-now { background: #EAFAF1; color: #1E8449; border: 1px solid #A9DFBF; }
+  .phase-3 { background: #EBF5FB; color: #1A5276; border: 1px solid #AED6F1; }
+  .phase-4 { background: #FEF9E7; color: #7D6608; border: 1px solid #F9E79F; }
+  .phase-5 { background: #F5EEF8; color: #6C3483; border: 1px solid #D2B4DE; }
+  .phase-cond { background: #F9F9F9; color: #999; border: 1px solid #ddd; }
+
+  /* Stream cards */
+  .stream-card {
+    background: #fff; border-radius: 9px; padding: 12px;
+    border: 1px solid #A2D9CE; margin-bottom: 8px;
+  }
+  .stream-card:last-child { margin-bottom: 0; }
+  .stream-card.not-used { border-color: #eee; background: #F9F9F9; }
+  .stream-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .stream-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; background: #D1F2EB;
+  }
+  .stream-icon.no { background: #f0f0f0; }
+  .stream-name { font-size: 12px; font-weight: 700; color: #0E6655; }
+  .stream-card.not-used .stream-name { color: #bbb; }
+  .stream-role { font-size: 10px; color: #999; }
+  .stream-items { font-size: 10.5px; color: #666; line-height: 1.5; list-style: none; }
+  .stream-items li { padding: 1px 0 1px 10px; position: relative; }
+  .stream-items li::before { content: '–'; position: absolute; left: 0; color: #ddd; }
+
+  /* ── Summary tables ── */
+  .summary-section {
+    margin-top: 24px; background: #fff;
+    border: 1px solid #ddd; border-radius: 10px; padding: 18px 20px;
+  }
+  .summary-title {
+    font-size: 12px; font-weight: 700; color: #444;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+  }
+  .summary-table { width: 100%; border-collapse: collapse; }
+  .summary-table th {
+    font-size: 11px; font-weight: 700; color: #777;
+    text-align: left; padding: 6px 10px;
+    border-bottom: 1px solid #eee;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .summary-table td {
+    font-size: 11.5px; color: #444;
+    padding: 7px 10px; border-bottom: 1px solid #f5f5f5;
+    vertical-align: top; line-height: 1.4;
+  }
+  .summary-table tr:last-child td { border-bottom: none; }
+  .summary-table td:first-child { font-weight: 600; color: #222; white-space: nowrap; }
+
+  /* ── Evolution strip ── */
+  .evolution { margin-top: 24px; background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 18px 20px; }
+  .evolution-title { font-size: 12px; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+  .evo-row { display: flex; gap: 10px; }
+  .evo-phase { flex: 1; border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; position: relative; }
+  .evo-phase-num {
+    position: absolute; top: -10px; left: 12px;
+    background: #fff; border: 1px solid #ddd; border-radius: 10px;
+    font-size: 10px; font-weight: 700; color: #888; padding: 1px 8px;
+  }
+  .evo-phase-title { font-size: 12px; font-weight: 700; color: #333; margin-bottom: 5px; }
+  .evo-phase-desc { font-size: 10.5px; color: #777; line-height: 1.4; }
+  .evo-phase.active { border-color: #2980B9; background: #EBF5FB; }
+  .evo-phase.active .evo-phase-title { color: #1A5276; }
+  .evo-phase.active .evo-phase-num { border-color: #2980B9; color: #2980B9; background: #EBF5FB; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── HEADER ── -->
+  <div class="doc-header">
+    <div class="doc-title">Madhi — System Architecture</div>
+    <div class="doc-meta">Holistic · All Phases · Intake through Adaptive Milestones</div>
+    <div class="doc-note">
+      ⚑ &nbsp;What we are building: a product-aware wrapper around a foundation model. Three AI modes — deterministic (math/rules), single-call AI (bounded extraction), agentic (multi-step loops). Foundation model is a swappable dependency, not the product.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════ CLIENT LAYER ══════════════════════════════════ -->
+  <div class="layer layer-client">
+    <div class="layer-label">🖥 &nbsp;Client Layer</div>
+    <div class="layer-sublabel">Browser · React 18 + TypeScript · Vite · CSS Modules</div>
+    <div class="card-row">
+
+      <div class="card">
+        <div class="card-title"><div class="card-icon">📋</div>Intake Form</div>
+        <ul>
+          <li>7-step form — About, Family, Commitments, Money, Assets, Goals</li>
+          <li>NIL enforcement on commitment steps</li>
+          <li>Investable capacity derived live (Step 5)</li>
+          <li>Goal clarification 2-turn loop (agentic)</li>
+          <li>Calls <span class="mono">/parse-goal</span> per goal entry</li>
+        </ul>
+        <span class="card-tag">Phase 1</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="card-icon">✅</div>Approval Queue</div>
+        <ul>
+          <li>Deterministic + AI-suggested milestones displayed together</li>
+          <li>Explicit approve / skip per card — no default</li>
+          <li>Gate: all decided before plan view unlocks</li>
+          <li>Rejected milestones stored — not discarded</li>
+        </ul>
+        <span class="card-tag">Phase 1</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="card-icon">🌑</div>Plan + Timeline</div>
+        <ul>
+          <li>Approved milestones only — moon-phase status</li>
+          <li>Life event timeline — goals + commitments on forward axis</li>
+          <li>Feasibility view (Phase 2), Allocation view (Phase 3)</li>
+          <li>Dashboard, alert feed, variance (Phase 5)</li>
+          <li>Export to JSON</li>
+        </ul>
+        <span class="card-tag">All phases</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="card-icon">📁</div>Statement Upload</div>
+        <ul>
+          <li>CSV / PDF upload (Phase 4)</li>
+          <li>File → backend → Kafka → parsing worker</li>
+          <li>Transaction list with search + category filter</li>
+          <li>Async — polling / WebSocket for parse completion</li>
+        </ul>
+        <span class="card-tag">Phase 4+</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="layer-connector">
+    <div class="connector-line"></div>
+    <div class="connector-arrow"></div>
+    <div class="connector-label">HTTPS · JSON · WebSocket (Phase 5+) · /api/* → localhost:8080 proxied via Vite in dev</div>
+  </div>
+
+  <!-- ══════════════════════════════════ BACKEND LAYER ══════════════════════════════════ -->
+  <div class="layer layer-backend">
+    <div class="layer-label">⚙ &nbsp;Backend Services</div>
+    <div class="layer-sublabel">Java · Spring Boot · Maven · localhost:8080 (dev) · managed cloud (prod)</div>
+
+    <div class="card-row">
+
+      <!-- Routes -->
+      <div class="card" style="flex: 0 0 280px;">
+        <div class="card-title"><div class="card-icon">🔀</div>API Routes — by Phase</div>
+        <ul>
+          <li><strong>Phase 1</strong> &nbsp;<span class="mono">/parse-goal</span> &nbsp;<span class="mono">/suggest-milestones</span></li>
+          <li><strong>Phase 2</strong> &nbsp;<span class="mono">/compute-feasibility</span> &nbsp;<span class="mono">/suggest-alternatives</span></li>
+          <li><strong>Phase 3</strong> &nbsp;<span class="mono">/compute-allocation</span> &nbsp;<span class="mono">/tax-gap</span></li>
+          <li><strong>Phase 4</strong> &nbsp;<span class="mono">/upload-statement</span> &nbsp;<span class="mono">/transactions</span> &nbsp;<span class="mono">/categorize</span></li>
+          <li><strong>Phase 5</strong> &nbsp;<span class="mono">/alerts</span> &nbsp;<span class="mono">/variance</span> &nbsp;<span class="mono">/dismiss-alert</span></li>
+          <li><strong>Phase 6</strong> &nbsp;<span class="mono">/recompute-milestones</span></li>
+        </ul>
+        <span class="card-tag">Spring Boot — @RestController per route group</span>
+      </div>
+
+      <!-- AI Wrapper -->
+      <div style="flex: 1;">
+        <div class="ai-wrapper">
+          <div class="ai-wrapper-title">AI Wrapper <span></span> context-aware · provider-agnostic <span></span></div>
+
+          <!-- Mode A -->
+          <div class="ai-mode-label ai-mode-a">⚡ Mode A — Single-call</div>
+          <div class="ai-flow">
+            <div class="ai-step">
+              <div class="ai-step-num">1</div>
+              <div class="ai-step-name">PromptBuilder</div>
+              <div class="ai-step-desc">System instructions + indian-finance.md context + user-specific input</div>
+            </div>
+            <div class="ai-step-arrow">→</div>
+            <div class="ai-step">
+              <div class="ai-step-num">2</div>
+              <div class="ai-step-name">ProviderClient</div>
+              <div class="ai-step-desc">Interface — one impl per provider. Swap via <span class="mono">AI_PROVIDER=</span> env var. No code change.</div>
+            </div>
+            <div class="ai-step-arrow">→</div>
+            <div class="ai-step">
+              <div class="ai-step-num">3</div>
+              <div class="ai-step-name">OutputParser</div>
+              <div class="ai-step-desc">Schema validation — throws on malformed output. No silent failures.</div>
+            </div>
+          </div>
+
+          <!-- Mode B -->
+          <div class="ai-mode-label ai-mode-b" style="margin-top:12px;">🔄 Mode B — Agentic loop</div>
+          <div class="agent-wrapper">
+            <div class="agent-flow">
+              <div class="agent-step">
+                <div class="agent-step-name">AgentRunner</div>
+                <div class="agent-step-desc">Orchestrates multi-turn loop</div>
+              </div>
+              <div class="agent-arrow">→</div>
+              <div class="agent-step">
+                <div class="agent-step-name">ProviderClient</div>
+                <div class="agent-step-desc">tool_use call to model</div>
+              </div>
+              <div class="agent-arrow">→</div>
+              <div class="agent-step">
+                <div class="agent-step-name">Tool Execute</div>
+                <div class="agent-step-desc">Task-specific tool runs</div>
+              </div>
+              <div class="agent-arrow">→</div>
+              <div class="agent-step">
+                <div class="agent-step-name">Observe</div>
+                <div class="agent-step-desc">Feed result back to model</div>
+              </div>
+              <div class="agent-arrow" style="color:#9B59B6;font-weight:700;">↺</div>
+            </div>
+            <div class="agent-loop-label">Loop until model signals done · max step limit enforced</div>
+            <div class="agent-use-cases">
+              <span class="agent-use-case">Ph 1 · Goal clarification (client-side 2-turn)</span>
+              <span class="agent-use-case future">Ph 4 · PDF statement parsing pipeline</span>
+              <span class="agent-use-case future">Ph 5 · Alert root-cause investigation</span>
+            </div>
+          </div>
+
+          <!-- Context file -->
+          <div class="context-file" style="margin-top:10px;">
+            <div class="context-file-icon">📄</div>
+            <div>
+              <div class="context-file-name">server/src/ai/context/indian-finance.md</div>
+              <div class="context-file-desc">EPF/PPF/NPS rules · 80C/80D limits · OPS vs NPS · tax regime differences · Indian milestones. Versioned in code — improves AI quality without touching other code. Replaced by RAG retrieval (Phase 3) as content grows.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /card-row -->
+  </div><!-- /backend layer -->
+
+  <!-- Three connectors fanning to three lower layers -->
+  <div class="lower-connector-row" style="margin-top: 0;">
+    <div class="lower-connector">
+      <div class="connector-line"></div>
+      <div class="connector-arrow"></div>
+      <div style="font-size:10px;color:#888;margin-top:2px;text-align:center;">HTTPS · API key from env</div>
+    </div>
+    <div class="lower-connector">
+      <div class="connector-line"></div>
+      <div class="connector-arrow"></div>
+      <div style="font-size:10px;color:#888;margin-top:2px;text-align:center;">TCP · managed services</div>
+    </div>
+    <div class="lower-connector">
+      <div class="connector-line"></div>
+      <div class="connector-arrow"></div>
+      <div style="font-size:10px;color:#888;margin-top:2px;text-align:center;">Kafka producer / consumer</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ THREE LOWER LAYERS (grid) ══════════════════════ -->
+  <div class="lower-grid">
+
+    <!-- ── FOUNDATION MODEL ── -->
+    <div class="layer layer-model" style="align-self: start;">
+      <div class="layer-label">🤖 Foundation Model</div>
+      <div class="layer-sublabel">External API — swappable dependency</div>
+
+      <div class="card">
+        <div class="card-title"><div class="card-icon">C</div>Claude (Anthropic)</div>
+        <ul>
+          <li>Haiku → goal parsing (speed)</li>
+          <li>Sonnet → milestones, narration, agents (judgment)</li>
+          <li>Structured output via tool_use</li>
+        </ul>
+        <span class="card-tag">Default · Phase 1</span>
+      </div>
+
+      <div class="card" style="margin-top:8px;">
+        <div class="card-title"><div class="card-icon">G</div>OpenAI</div>
+        <ul>
+          <li>GPT-4o-mini → parsing · GPT-4o → suggestion</li>
+          <li>Structured output via response_format schema</li>
+          <li>Same ProviderClient interface</li>
+        </ul>
+        <span class="card-tag">Alternate provider</span>
+      </div>
+
+      <div class="card future" style="margin-top:8px;">
+        <div class="card-title"><div class="card-icon" style="background:#eee;color:#aaa;">+</div>Fine-tuned Model</div>
+        <ul>
+          <li>Trained on Madhi approval/rejection decisions</li>
+          <li>Indian finance domain-specific</li>
+          <li>Same interface — new ProviderClient impl</li>
+        </ul>
+        <span class="card-tag" style="border:1px dashed #A9DFBF;background:transparent;color:#7DCEA0;">Phase 5+</span>
+      </div>
+    </div>
+
+    <!-- ── DATA LAYER ── -->
+    <div class="layer layer-data" style="align-self: start;">
+      <div class="layer-label">🗄 Data Layer</div>
+      <div class="layer-sublabel">Right store for the right data shape</div>
+
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-icon">🐘</div>
+          <div><div class="db-name">PostgreSQL</div><div class="db-role">Core relational store</div></div>
+        </div>
+        <ul class="db-items">
+          <li>users · phase_plans · goals · milestones (FK relationships)</li>
+          <li>approval_events audit trail</li>
+          <li>financial_accounts from statement uploads</li>
+          <li>pgvector extension → vector store (Phase 3, RAG)</li>
+        </ul>
+        <span class="db-phase phase-4">Phase 4</span>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-icon">🍃</div>
+          <div><div class="db-name">MongoDB</div><div class="db-role">Variable-schema documents</div></div>
+        </div>
+        <ul class="db-items">
+          <li>parsed_transactions — schema varies by bank format</li>
+          <li>statement_documents — uploaded file metadata</li>
+          <li>alert_events — flexible payload per alert type</li>
+          <li>intake_snapshots — mid-session form state</li>
+        </ul>
+        <span class="db-phase phase-4">Phase 4</span>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-icon">⚡</div>
+          <div><div class="db-name">Redis</div><div class="db-role">Cache · rate limit · queue</div></div>
+        </div>
+        <ul class="db-items">
+          <li>AI response cache — hash(profile+text) → StructuredGoal (24h TTL)</li>
+          <li>Session store · rate limiting per user</li>
+          <li>Redis Streams — job queue (Phase 3 only, replaced by Kafka in Phase 4)</li>
+        </ul>
+        <span class="db-phase phase-3">Phase 3</span>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-icon">🔍</div>
+          <div><div class="db-name">pgvector / Pinecone</div><div class="db-role">Vector store · RAG</div></div>
+        </div>
+        <ul class="db-items">
+          <li>Tax rules · EPF/PPF/NPS limits · SEBI category definitions</li>
+          <li>Semantic retrieval — inject only relevant context per request</li>
+          <li>pgvector (Postgres extension) until scale demands Pinecone</li>
+        </ul>
+        <span class="db-phase phase-3">Phase 3</span>
+      </div>
+
+      <div class="db-card">
+        <div class="db-card-header">
+          <div class="db-icon">🔎</div>
+          <div><div class="db-name">Elasticsearch</div><div class="db-role">Transaction search index</div></div>
+        </div>
+        <ul class="db-items">
+          <li>Full-text merchant search with fuzzy matching</li>
+          <li>Faceted filter: category + amount range + date</li>
+          <li>Aggregations — spend per category per month (dashboard)</li>
+          <li>Synced from MongoDB via Kafka consumer</li>
+        </ul>
+        <span class="db-phase phase-5">Phase 5</span>
+      </div>
+
+      <div class="db-card" style="border-color:#ddd;">
+        <div class="db-card-header">
+          <div class="db-icon" style="background:#f0f0f0;">🏔</div>
+          <div><div class="db-name" style="color:#aaa;">Cassandra</div><div class="db-role">Conditional only</div></div>
+        </div>
+        <ul class="db-items">
+          <li>High-volume time-series write throughput at scale</li>
+          <li>Not introduced until Postgres partitioning is measurably insufficient</li>
+          <li>Significant ops overhead — justify with real data before adding</li>
+        </ul>
+        <span class="db-phase phase-cond">Phase 5+ · conditional</span>
+      </div>
+    </div>
+
+    <!-- ── STREAMING LAYER ── -->
+    <div class="layer layer-stream" style="align-self: start;">
+      <div class="layer-label">🌊 Streaming Platform</div>
+      <div class="layer-sublabel">Event backbone · real-time pipeline</div>
+
+      <div class="stream-card">
+        <div class="stream-card-header">
+          <div class="stream-icon">⚙</div>
+          <div><div class="stream-name">Apache Kafka</div><div class="stream-role">Durable event log</div></div>
+        </div>
+        <ul class="stream-items">
+          <li><strong>statements.uploaded</strong> → parsing worker</li>
+          <li><strong>transactions.parsed</strong> → MongoDB, ES indexer, alert engine</li>
+          <li><strong>alerts.fired</strong> → notification + event log</li>
+          <li><strong>milestones.approved</strong> → audit + ML training sink</li>
+          <li>Replaces Redis Streams in Phase 4</li>
+          <li>Replay capability — rebuild ES index without re-parsing PDFs</li>
+        </ul>
+        <span class="db-phase phase-4" style="margin-top:6px;display:inline-block;">Phase 4</span>
+      </div>
+
+      <div class="stream-card" style="margin-top:8px;">
+        <div class="stream-card-header">
+          <div class="stream-icon">⚡</div>
+          <div><div class="stream-name">Kafka Streams</div><div class="stream-role">Real-time pipeline (embedded)</div></div>
+        </div>
+        <ul class="stream-items">
+          <li>Transaction categorization pipeline — lookup → AI fallback for unknowns</li>
+          <li>30-day rolling variance window per category per user</li>
+          <li>Windowed state embedded in app process — no separate cluster</li>
+          <li>Emits to <span class="mono">alerts.fired</span> when variance exceeds threshold</li>
+        </ul>
+        <span class="db-phase phase-5" style="margin-top:6px;display:inline-block;">Phase 5</span>
+      </div>
+
+      <div class="stream-card not-used" style="margin-top:8px;">
+        <div class="stream-card-header">
+          <div class="stream-icon no">—</div>
+          <div><div class="stream-name" style="color:#bbb;">Apache Flink</div><div class="stream-role">Not used</div></div>
+        </div>
+        <ul class="stream-items" style="color:#bbb;">
+          <li>Kafka Streams covers Madhi's stream processing needs</li>
+          <li>Flink's distributed cluster adds ops complexity without benefit at this scale</li>
+        </ul>
+        <span class="db-phase phase-cond">Not used</span>
+      </div>
+
+      <div class="stream-card not-used" style="margin-top:8px;">
+        <div class="stream-card-header">
+          <div class="stream-icon no">—</div>
+          <div><div class="stream-name" style="color:#bbb;">Apache Spark</div><div class="stream-role">Not used</div></div>
+        </div>
+        <ul class="stream-items" style="color:#bbb;">
+          <li>Madhi's transaction volumes don't require distributed batch computing</li>
+          <li>ML training uses managed GPU service (SageMaker / Vertex AI), not Spark</li>
+        </ul>
+        <span class="db-phase phase-cond">Not used</span>
+      </div>
+    </div>
+
+  </div><!-- /lower-grid -->
+
+  <!-- ══════════════════════════════════ PHASE SUMMARY ══════════════════════════════════ -->
+  <div class="summary-section">
+    <div class="summary-title">Technology Stack — Introduced by Phase</div>
+    <table class="summary-table">
+      <tr>
+        <th>Phase</th>
+        <th>AI mode</th>
+        <th>Data added</th>
+        <th>Streaming added</th>
+        <th>New routes</th>
+      </tr>
+      <tr>
+        <td>1 — Intake + Milestones</td>
+        <td>Single-call (Haiku + Sonnet) · Agentic 2-turn (client)</td>
+        <td>localStorage only</td>
+        <td>—</td>
+        <td><span class="mono">/parse-goal</span> &nbsp;<span class="mono">/suggest-milestones</span></td>
+      </tr>
+      <tr>
+        <td>2 — Feasibility</td>
+        <td>Single-call (narration)</td>
+        <td>—</td>
+        <td>—</td>
+        <td><span class="mono">/compute-feasibility</span> &nbsp;<span class="mono">/suggest-alternatives</span></td>
+      </tr>
+      <tr>
+        <td>3 — Allocation + Tax</td>
+        <td>Single-call + RAG retrieval</td>
+        <td>Redis · pgvector (RAG)</td>
+        <td>Redis Streams (job queue)</td>
+        <td><span class="mono">/compute-allocation</span> &nbsp;<span class="mono">/tax-gap</span></td>
+      </tr>
+      <tr>
+        <td>4 — Statement Parsing</td>
+        <td>Agentic — PDF parsing pipeline</td>
+        <td>PostgreSQL · MongoDB</td>
+        <td>Kafka replaces Redis Streams</td>
+        <td><span class="mono">/upload-statement</span> &nbsp;<span class="mono">/transactions</span> &nbsp;<span class="mono">/categorize</span></td>
+      </tr>
+      <tr>
+        <td>5 — Tracking + Alerts</td>
+        <td>Agentic — alert investigation · Fine-tune begins</td>
+        <td>Elasticsearch · Cassandra (conditional)</td>
+        <td>Kafka Streams — categorization + variance</td>
+        <td><span class="mono">/alerts</span> &nbsp;<span class="mono">/variance</span> &nbsp;<span class="mono">/dismiss-alert</span></td>
+      </tr>
+      <tr>
+        <td>6 — Adaptive Milestones</td>
+        <td>Reuses Phase 2 + Phase 1</td>
+        <td>—</td>
+        <td>—</td>
+        <td><span class="mono">/recompute-milestones</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ══════════════════════════════════ EVOLUTION STRIP ══════════════════════════════════ -->
+  <div class="evolution">
+    <div class="evolution-title">AI Wrapper — Evolution by Phase</div>
+    <div class="evo-row">
+      <div class="evo-phase active">
+        <div class="evo-phase-num">Phase 1</div>
+        <div class="evo-phase-title">Prompt + Agentic entry</div>
+        <div class="evo-phase-desc">Structured output via tool_use. indian-finance.md is the domain layer. 2-turn clarification loop (client-side). AgentRunner interface defined now — activated in Phase 4.</div>
+      </div>
+      <div class="evo-phase">
+        <div class="evo-phase-num">Phase 3–4</div>
+        <div class="evo-phase-title">+ RAG + Agentic pipeline</div>
+        <div class="evo-phase-desc">pgvector replaces static md file for tax/EPF/NPS rules — retrieves only relevant sections. AgentRunner activated for PDF statement parsing agent.</div>
+      </div>
+      <div class="evo-phase">
+        <div class="evo-phase-num">Phase 5+</div>
+        <div class="evo-phase-title">+ Fine-tuning + Alert agent</div>
+        <div class="evo-phase-desc">Approved/skipped decisions → labelled training set. Alert investigation agent added. Fine-tuned model added as new ProviderClient implementation.</div>
+      </div>
+      <div class="evo-phase">
+        <div class="evo-phase-num">Long term</div>
+        <div class="evo-phase-title">Distilled model</div>
+        <div class="evo-phase-desc">Fine-tuned outputs train a smaller domain-specific model. Lower cost, lower latency. One more ProviderClient implementation — nothing else changes.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

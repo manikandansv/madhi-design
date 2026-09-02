@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Madhi — System Architecture</title>
+  <style>
+    :root {
+      --client-bg: #ebf5fb; --client-b: #2980b9;
+      --backend-bg: #f4f6f7; --backend-b: #566573;
+      --model-bg: #eafaf1; --model-b: #27ae60;
+      --data-bg: #fef9e7; --data-b: #d4ac0d;
+      --stream-bg: #e8f8f5; --stream-b: #17a589;
+      --arr: #344054; --ink: #17202a; --muted: #667085;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eef2f6; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, sans-serif; line-height: 1.4; }
+    .page { max-width: 1420px; margin: 0 auto; padding: 24px 20px 40px; }
+
+    .header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
+    h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
+    .subtitle { margin-top: 6px; color: var(--muted); font-size: 13px; max-width: 740px; }
+    .legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; border: 1px solid; white-space: nowrap; }
+    .badge.active { background: #17202a; color: #fff; border-color: #17202a; }
+    .badge.phase2 { background: #d9ecff; color: #103b5f; border-color: #2980b9; }
+    .badge.phase3 { background: #e8f8f5; color: #0e6655; border-color: #17a589; }
+    .badge.future { background: #f8fafc; color: #667085; border-color: #d0d7df; border-style: dashed; }
+    .badge.cond { background: #fff8d8; color: #795c00; border-color: #d4ac0d; }
+
+    .diagram { background: #fff; border: 1px solid #dce3ea; border-radius: 18px; padding: 20px; box-shadow: 0 16px 36px rgba(16,24,40,.08); overflow-x: auto; }
+
+    .stepbar { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; padding: 9px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px; margin-bottom: 18px; }
+    .si { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #344054; }
+    .sn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #17202a; color: #fff; font-size: 10px; font-weight: 900; flex-shrink: 0; }
+    .sn.ph3 { background: #566573; }
+    .sn.ph4 { background: #17a589; }
+    .sep { color: #c5cbd3; }
+
+    /* 5-col grid: [Client] [arrow] [Backend] [arrow] [Model] */
+    .flow-grid { display: grid; grid-template-columns: 200px 74px minmax(0,1fr) 74px 220px; align-items: stretch; min-width: 880px; }
+
+    .layer { border: 2px solid; border-radius: 13px; overflow: hidden; }
+    .layer.client  { background: var(--client-bg);  border-color: var(--client-b);  }
+    .layer.backend { background: var(--backend-bg); border-color: var(--backend-b); }
+    .layer.model   { background: var(--model-bg);   border-color: var(--model-b);   }
+    .layer.data    { background: var(--data-bg);    border-color: var(--data-b);    }
+    .layer.stream  { background: var(--stream-bg);  border-color: var(--stream-b);  }
+
+    .lh  { padding: 9px 12px 7px; border-bottom: 1px solid rgba(23,32,42,.1); }
+    .lt  { display: flex; justify-content: space-between; align-items: flex-start; font-size: 13px; font-weight: 800; line-height: 1.2; gap: 8px; }
+    .ltech { font-size: 10px; color: var(--muted); margin-top: 3px; }
+    .lb  { padding: 9px 10px 10px; }
+
+    .c { padding: 5px 8px; border: 1px solid rgba(23,32,42,.12); border-radius: 7px; background: rgba(255,255,255,.76); margin-bottom: 5px; font-size: 11px; font-weight: 700; line-height: 1.3; }
+    .c:last-child { margin-bottom: 0; }
+    .cd { display: block; color: #5f6b78; font-size: 10px; font-weight: 500; margin-top: 2px; }
+    .c.act { border-color: rgba(23,32,42,.22); }
+    .c.ph2 { border-color: #2980b9; background: rgba(215,234,255,.35); }
+    .c.fut { border-style: dashed; background: rgba(255,255,255,.35); color: #697586; }
+    .c.off { border-style: dashed; color: #98a2b3; opacity: .6; }
+
+    .sub    { margin: 6px 0; padding: 7px 8px; border: 1.5px dashed rgba(142,68,173,.4); border-radius: 8px; background: rgba(245,238,248,.55); }
+    .sublbl { font-size: 10px; font-weight: 800; color: #7d3c98; margin-bottom: 5px; }
+    .pipe   { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; margin-bottom: 4px; }
+    .pn     { padding: 3px 6px; border: 1px solid rgba(142,68,173,.3); border-radius: 5px; background: #fff; font-size: 9.5px; font-weight: 700; color: #5b2c6f; }
+    .pa     { color: #8e44ad; font-size: 11px; font-weight: 900; }
+    .ctag   { font-size: 9.5px; color: var(--muted); margin-top: 2px; }
+
+    /* horizontal arrow columns */
+    .arrc { display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 16px 4px; }
+    .arrg { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .ahl  { display: flex; align-items: center; width: 100%; gap: 4px; }
+    .aline { flex: 1; height: 2px; background: var(--arr); position: relative; }
+    .aline.r::after  { content: ''; position: absolute; right: -1px; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 8px solid var(--arr); }
+    .aline.l::before { content: ''; position: absolute; left: -1px; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 8px solid var(--arr); }
+    .albl { font-size: 9.5px; font-weight: 700; color: var(--muted); text-align: center; padding: 2px 5px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; white-space: nowrap; }
+    .asn  { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; background: #17202a; color: #fff; font-size: 8.5px; font-weight: 900; flex-shrink: 0; }
+
+    /* vertical arrow section — same 5-col grid */
+    .vsec { display: grid; grid-template-columns: 200px 74px minmax(0,1fr) 74px 220px; min-width: 880px; }
+    /* inner grid matches binner so arrows land above correct boxes */
+    .vcol-inner { display: grid; grid-template-columns: 1fr 32px 1fr; width: 100%; padding: 0 2px; }
+    .vg  { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 0; }
+    .vline { width: 2px; height: 26px; background: var(--arr); position: relative; }
+    .vline.d::after { content: ''; position: absolute; bottom: -1px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid var(--arr); }
+    .vline.teal { background: var(--stream-b); }
+    .vline.teal.d::after { border-top-color: var(--stream-b); }
+    .vlbl { font-size: 9px; font-weight: 700; color: var(--muted); text-align: center; padding: 2px 5px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 4px; white-space: nowrap; }
+
+    /* bottom row — same 5-col grid */
+    .brow   { display: grid; grid-template-columns: 200px 74px minmax(0,1fr) 74px 220px; min-width: 880px; }
+    .binner { display: grid; grid-template-columns: 1fr 32px 1fr; }
+    .barr { display: flex; align-items: center; justify-content: center; }
+    .barr-inner { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bline { width: 2px; height: 28px; background: #7f8c8d; position: relative; }
+    .bline.d::after { content: ''; position: absolute; bottom: -1px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 8px solid #7f8c8d; }
+    .blbl { font-size: 9px; font-weight: 700; color: var(--muted); text-align: center; white-space: nowrap; padding: 1px 4px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; }
+
+    /* Phase 5 feedback strip */
+    .feedback-strip { display: grid; grid-template-columns: 200px 74px minmax(0,1fr) 74px 220px; min-width: 880px; margin-top: 4px; }
+    .feedback-inner { display: grid; grid-template-columns: 1fr 32px 1fr; }
+    .fbrow { display: flex; flex-direction: column; align-items: flex-start; padding: 5px 0 2px; }
+    .fblbl { font-size: 9.5px; font-weight: 700; color: #17a589; white-space: nowrap; padding: 1px 6px; background: #e8f8f5; border: 1px solid #a2d9ce; border-radius: 4px; }
+    .fb-hline { display: flex; align-items: center; width: 100%; margin-top: 3px; }
+    .fb-line { flex: 1; height: 2px; background: #17a589; position: relative; }
+    .fb-line.l::before { content: ''; position: absolute; left: -1px; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 8px solid #17a589; }
+    .fb-mid { display: flex; align-items: center; justify-content: center; width: 100%; }
+    .fb-through { width: 2px; height: 14px; background: #17a589; }
+    .fb-client-up { display: flex; flex-direction: column; align-items: flex-start; padding: 2px 0 5px; }
+    .fb-client-line { width: 2px; height: 20px; background: #17a589; position: relative; }
+    .fb-client-line::before { content: ''; position: absolute; top: -1px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid #17a589; }
+
+    .notes { margin-top: 14px; padding: 10px 14px; background: #f7fbff; border: 1px solid #d6e6f5; border-left: 4px solid #2980b9; border-radius: 9px; font-size: 12px; color: #31566f; line-height: 1.55; }
+
+    .support { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 18px; margin-top: 18px; }
+    .panel   { background: #fff; border: 1px solid #dce3ea; border-radius: 16px; padding: 16px; box-shadow: 0 10px 24px rgba(16,24,40,.05); }
+    .panel h2 { margin: 0 0 12px; font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { border-bottom: 1px solid #edf0f3; padding: 7px 6px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
+    code { font-size: 10.5px; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; font-family: ui-monospace, monospace; }
+
+    .evolist  { display: flex; flex-direction: column; gap: 8px; }
+    .evoitem  { display: grid; grid-template-columns: 78px 1fr; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid #e2e7ed; border-radius: 10px; background: #fbfcfd; }
+    .evophase { border-radius: 999px; text-align: center; padding: 3px 6px; font-size: 10px; font-weight: 900; background: #17202a; color: #fff; }
+    .evoitem.ph2 .evophase { background: #2980b9; }
+    .evoitem.fut .evophase { background: #667085; }
+    .evotitle { font-size: 12px; font-weight: 800; }
+    .evodesc  { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+    @media (max-width: 900px) {
+      .header, .support { display: block; }
+      .legend { justify-content: flex-start; margin-top: 10px; }
+      .support > .panel { margin-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+
+    <header class="header">
+      <div>
+        <h1>Madhi System Architecture</h1>
+        <p class="subtitle">
+          End-to-end flow: client goal input → Spring Boot backend → AI wrapper + foundation model →
+          data persistence (Phase 3+) → Kafka async streaming (Phase 4+).
+          Phase 2 feasibility engine lives inside the backend.
+        </p>
+      </div>
+      <div class="legend">
+        <span class="badge active">Phase 1 — Active</span>
+        <span class="badge phase2">Phase 2</span>
+        <span class="badge phase3">Phase 3</span>
+        <span class="badge future">Future</span>
+        <span class="badge cond">Conditional</span>
+      </div>
+    </header>
+
+    <section class="diagram">
+
+      <!-- step legend bar -->
+      <div class="stepbar">
+        <div class="si"><span class="sn">①</span> Enter goal</div><span class="sep">›</span>
+        <div class="si"><span class="sn">②</span> API call</div><span class="sep">›</span>
+        <div class="si"><span class="sn">③</span> Build prompt</div><span class="sep">›</span>
+        <div class="si"><span class="sn">④</span> Call model</div><span class="sep">›</span>
+        <div class="si"><span class="sn">⑤</span> Parse response</div><span class="sep">›</span>
+        <div class="si"><span class="sn">⑥</span> Return plan</div><span class="sep">›</span>
+        <div class="si"><span class="sn ph3">⑦</span> Persist (Ph 3+)</div><span class="sep">›</span>
+        <div class="si"><span class="sn ph4">⑧</span> Emit event (Ph 4+)</div>
+      </div>
+
+      <!-- TOP FLOW ROW: [CLIENT] <-> [BACKEND] <-> [MODEL] -->
+      <div class="flow-grid">
+
+        <div class="layer client">
+          <div class="lh">
+            <div class="lt">Layer 1 — Client <span class="badge active">Active</span></div>
+            <div class="ltech">React · TypeScript · Vite</div>
+          </div>
+          <div class="lb">
+            <div class="c act">🌐 Web App <span class="badge active" style="font-size:8px">Current</span><span class="cd">Browser · Vite dev → prod build</span></div>
+            <div class="c fut">📱 Mobile App <span class="badge future" style="font-size:8px">Upgrade path</span><span class="cd">React Native / Flutter; same backend APIs</span></div>
+            <div class="c act">Intake Form ①<span class="cd">7-step structured goal capture</span></div>
+            <div class="c act">Approval Queue<span class="cd">Milestone approve / skip</span></div>
+            <div class="c act">Plan + Life Event Timeline<span class="cd">Approved plan + forward event axis</span></div>
+            <div class="c ph2">Feasibility + Path View <span class="badge phase2" style="font-size:8px">Phase 2</span><span class="cd">Goal feasibility · alternatives · inflation-adjusted</span></div>
+            <div class="c fut">Statement Upload<span class="cd">CSV / PDF upload (Phase 4+)</span></div>
+            <div class="c fut">Dashboard + Alert Feed<span class="cd">Variance · alerts · tax reminders (Phase 5+)</span></div>
+          </div>
+        </div>
+
+        <!-- arrow: Client <-> Backend -->
+        <div class="arrc">
+          <div class="arrg">
+            <div class="ahl"><span class="asn">②</span><div class="aline r" style="margin-left:4px"></div></div>
+            <div class="albl">POST /api/* · HTTPS REST</div>
+          </div>
+          <div class="arrg">
+            <div class="albl">JSON Plan · step ⑥</div>
+            <div class="ahl"><div class="aline l" style="margin-right:4px"></div><span class="asn">⑥</span></div>
+          </div>
+        </div>
+
+        <div class="layer backend">
+          <div class="lh">
+            <div class="lt">Layer 2 — Backend Services <span class="badge active">Active</span></div>
+            <div class="ltech">Java 21 · Spring Boot · Maven</div>
+          </div>
+          <div class="lb">
+            <div class="c act">@RestController<span class="cd">/api/parse-goal · /api/suggest-milestones · /api/alerts · /api/variance</span></div>
+            <div class="c ph2">Feasibility Engine <span class="badge phase2" style="font-size:8px">Phase 2</span><span class="cd">Capacity vs goal amount vs timeline</span></div>
+            <div class="c ph2">Alternative Path Generator<span class="cd">Longer timeline / smaller target / higher contribution</span></div>
+            <div class="c ph2">Inflation + EPF/PPF Projector<span class="cd">Future cost · retirement corpus · retirement gap</span></div>
+            <div class="sub">
+              <div class="sublbl">AI Wrapper — product-aware layer (steps ③ → ⑤)</div>
+              <div class="pipe">
+                <span class="pn">PromptBuilder</span><span class="pa">→</span>
+                <span class="pn">ProviderClient</span><span class="pa">→</span>
+                <span class="pn">OutputParser</span>
+                <span class="badge active" style="font-size:8px;padding:1px 5px;margin-left:3px">Mode A</span>
+              </div>
+              <div class="pipe">
+                <span class="pn">AgentRunner</span><span class="pa">→</span>
+                <span class="pn">Tool Execute</span><span class="pa">→</span>
+                <span class="pn">Observe</span><span class="pa">→ loop</span>
+                <span class="badge phase3" style="font-size:8px;padding:1px 5px">Mode B</span>
+              </div>
+              <div class="ctag" style="margin-top:3px;">Mode B: Ph 1 client-side 2-turn loop (active) · Ph 4 server AgentRunner (future)</div>
+              <div class="ctag">📄 <strong>indian-finance.md</strong> injected into every call</div>
+            </div>
+            <div class="c fut">Background Workers<span class="cd">Kafka consumers for statement parse jobs (Phase 4)</span></div>
+            <div class="c fut">Mobile Auth + Push Adapter<span class="cd">Device tokens · APNs / FCM (mobile upgrade path)</span></div>
+          </div>
+        </div>
+
+        <!-- arrow: Backend <-> Foundation Model -->
+        <div class="arrc">
+          <div class="arrg">
+            <div class="ahl"><span class="asn">③</span><div class="aline r" style="margin-left:4px"></div></div>
+            <div class="albl">HTTPS → Claude / OpenAI</div>
+          </div>
+          <div class="arrg">
+            <div class="albl">Structured JSON · step ⑤</div>
+            <div class="ahl"><div class="aline l" style="margin-right:4px"></div><span class="asn">⑤</span></div>
+          </div>
+        </div>
+
+        <div class="layer model">
+          <div class="lh">
+            <div class="lt">Layer 3 — Foundation Model <span class="badge active">External</span></div>
+            <div class="ltech">HTTPS · API key lives in backend env only</div>
+          </div>
+          <div class="lb">
+            <div class="c act">Claude / Anthropic ④<span class="cd">Haiku → parsing · Sonnet → judgment + Phase 2 narration</span></div>
+            <div class="c act">OpenAI (alternate)<span class="cd">GPT-4o-mini / GPT-4o</span></div>
+            <div class="c fut">Fine-tuned Model<span class="cd">Phase 5+ specialized task model</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- VERTICAL ARROWS: Backend -> Data (7) and Backend -> Kafka (8) -->
+      <!-- vcol-inner mirrors binner grid so arrows align above their target boxes -->
+      <div class="vsec">
+        <div></div>
+        <div></div>
+        <div>
+          <div class="vcol-inner">
+            <div style="display:flex;justify-content:center">
+              <div class="vg">
+                <div class="vline d"></div>
+                <div class="vlbl">⑦ JDBC / Driver — Phase 3+</div>
+              </div>
+            </div>
+            <div></div>
+            <div style="display:flex;justify-content:center">
+              <div class="vg">
+                <div class="vline d teal"></div>
+                <div class="vlbl" style="border-color:#aed6d0">⑧ Kafka Producer — Phase 4+</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+        <div></div>
+      </div>
+
+      <!-- BOTTOM ROW: Data Layer + Kafka, spanning the backend column -->
+      <div class="brow">
+        <div></div>
+        <div></div>
+        <div class="binner">
+
+          <div class="layer data">
+            <div class="lh">
+              <div class="lt">Layer 4 — Data Layer <span class="badge future">Phase 3+</span></div>
+              <div class="ltech">Right store per data shape</div>
+            </div>
+            <div class="lb">
+              <div class="c fut">🐘 PostgreSQL <span class="badge cond" style="font-size:8px">Phase 4</span><span class="cd">Users · plans · goals · milestones</span></div>
+              <div class="c" style="border-color:#17a589;background:rgba(232,248,245,.4);">🔴 Redis <span class="badge phase3" style="font-size:8px">Phase 3</span><span class="cd">Cache · rate limiting · job queue</span></div>
+              <div class="c fut">🍃 MongoDB <span class="badge cond" style="font-size:8px">Phase 4</span><span class="cd">Parsed transactions + alert events</span></div>
+              <div class="c" style="border-color:#17a589;background:rgba(232,248,245,.4);">pgvector / Pinecone <span class="badge phase3" style="font-size:8px">Phase 3</span><span class="cd">RAG: tax / EPF / PPF / NPS rules</span></div>
+              <div class="c fut">Elasticsearch (Phase 5)<span class="cd">Transaction search + faceted filters</span></div>
+              <div class="c fut" style="opacity:.75">Cassandra<span class="cd">Time-series at scale (conditional)</span></div>
+            </div>
+          </div>
+
+          <!-- Kafka Streams writes back to Data Layer -->
+          <div class="barr">
+            <div class="barr-inner">
+              <div class="blbl">Streams<br>write</div>
+              <div class="bline d"></div>
+            </div>
+          </div>
+
+          <div class="layer stream">
+            <div class="lh">
+              <div class="lt">Layer 5 — Streaming <span class="badge future">Phase 4+</span></div>
+              <div class="ltech">Apache Kafka · Kafka Streams</div>
+            </div>
+            <div class="lb">
+              <div class="c fut">Kafka Topics ⑧<span class="cd">transactions.parsed · statements.uploaded · alerts.fired · milestones.approved</span></div>
+              <div class="c fut">Kafka Streams<span class="cd">Real-time categorization · 30-day rolling variance</span></div>
+              <div class="c fut">Alert Engine Consumer<span class="cd">Reacts to events → REST / WebSocket to client (Phase 5)</span></div>
+              <div class="c off">✗ Apache Flink — not part of this architecture</div>
+              <div class="c off">✗ Apache Spark — not part of this architecture</div>
+            </div>
+          </div>
+
+        </div>
+        <div></div>
+        <div></div>
+      </div>
+
+      <!-- PHASE 5 FEEDBACK: Streaming Alert Engine → WebSocket → Client -->
+      <div class="feedback-strip">
+        <!-- Client column: arrow tip pointing up into Client layer -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:2px 0 4px;">
+          <div style="width:2px;height:22px;background:#17a589;position:relative;">
+            <div style="position:absolute;top:-1px;left:-4px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid #17a589;"></div>
+          </div>
+          <div style="font-size:9px;font-weight:700;color:#17a589;background:#e8f8f5;border:1px solid #a2d9ce;border-radius:4px;padding:1px 5px;margin-top:3px;white-space:nowrap;">⑨ WebSocket push</div>
+        </div>
+        <!-- gap -->
+        <div></div>
+        <!-- Backend column: horizontal return arrow spanning Data→Stream, labelled -->
+        <div class="feedback-inner">
+          <div style="display:flex;align-items:center;padding:10px 0 0;">
+            <div style="flex:1;height:2px;background:#17a589;"></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;padding:10px 0 0;">
+            <div style="font-size:9px;font-weight:700;color:#17a589;background:#e8f8f5;border:1px solid #a2d9ce;border-radius:4px;padding:1px 5px;white-space:nowrap;">Phase 5 alert</div>
+          </div>
+          <div style="display:flex;align-items:center;padding:10px 0 0;">
+            <div style="flex:1;height:2px;background:#17a589;position:relative;">
+              <div style="content:'';position:absolute;right:-1px;top:-4px;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #17a589;width:0;height:0;"></div>
+            </div>
+          </div>
+        </div>
+        <!-- gap -->
+        <div></div>
+        <!-- Streaming column: upward connection from Alert Engine Consumer -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:2px 0 4px;">
+          <div style="font-size:9px;font-weight:700;color:#17a589;background:#e8f8f5;border:1px solid #a2d9ce;border-radius:4px;padding:1px 5px;margin-bottom:3px;white-space:nowrap;">Alert Engine Consumer</div>
+          <div style="width:2px;height:22px;background:#17a589;position:relative;">
+            <div style="position:absolute;top:-1px;left:-4px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid #17a589;"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="notes">
+      <strong>Phase 2</strong> is deterministic math + AI narration inside the backend: feasibility ratio, inflation-adjusted targets, alternative paths, EPF/PPF retirement projection.
+      Adding a mobile app only changes Layer 1; Layer 2 gains only mobile-auth and push adapters.
+      AI wrapper, data layer, and streaming platform remain stable across all client types.
+    </div>
+
+    <section class="support">
+
+      <div class="panel">
+        <h2>End-to-End Request Flow</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Action</th><th>System Flow</th><th>Output</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="sn" style="display:inline-flex;width:18px;height:18px;font-size:9px">①</span></td><td>Enter goal</td><td>Intake Form captures one free-text goal</td><td><code>raw_goal_text</code></td></tr>
+            <tr><td><span class="sn" style="display:inline-flex;width:18px;height:18px;font-size:9px">②</span></td><td>API call</td><td>Client → Backend <code>POST /api/parse-goal</code> HTTPS</td><td>HTTP request</td></tr>
+            <tr><td><span class="sn" style="display:inline-flex;width:18px;height:18px;font-size:9px">③</span></td><td>Build prompt</td><td>PromptBuilder combines profile + goal + <code>indian-finance.md</code></td><td>Provider prompt</td></tr>
+            <tr><td><span class="sn" style="display:inline-flex;width:18px;height:18px;font-size:9px">④</span></td><td>Call model</td><td>ProviderClient → Claude (default) or OpenAI</td><td>Model JSON</td></tr>
+            <tr><td><span class="sn" style="display:inline-flex;width:18px;height:18px;font-size:9px">⑤</span></td><td>Parse response</td><td>OutputParser validates schema + confidence score</td><td><code>StructuredGoal</code></td></tr>
+            <tr><td><span class="sn" style="display:inline-flex;width:18px;height:18px;font-size:9px">⑥</span></td><td>Return plan</td><td>Backend returns milestones to client for approval</td><td><code>ConfirmedMilestone[]</code></td></tr>
+            <tr><td><span class="sn ph3" style="display:inline-flex;width:18px;height:18px;font-size:9px">⑦</span></td><td>Persist (Ph 3+)</td><td><strong>Ph 1:</strong> localStorage (device-local) · <strong>Ph 3+:</strong> Backend → PostgreSQL + Redis cache</td><td><code>Phase1Plan</code> / <code>PhasePlan</code></td></tr>
+            <tr><td><span class="sn ph4" style="display:inline-flex;width:18px;height:18px;font-size:9px">⑧</span></td><td>Emit (Ph 4+)</td><td>Kafka Producer → <code>milestones.approved</code> topic</td><td>Kafka message</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2>AI Evolution</h2>
+        <div class="evolist">
+          <div class="evoitem">
+            <div class="evophase">Phase 1</div>
+            <div><div class="evotitle">Prompt Engineering</div><div class="evodesc">Schema-bound goal parsing and milestone rationale.</div></div>
+          </div>
+          <div class="evoitem ph2">
+            <div class="evophase">Phase 2</div>
+            <div><div class="evotitle">AI Narration over Deterministic Math</div><div class="evodesc">Math engine computes paths; AI explains tradeoffs in user-matched language.</div></div>
+          </div>
+          <div class="evoitem fut">
+            <div class="evophase">Phase 3–4</div>
+            <div><div class="evotitle">+ RAG + Agentic</div><div class="evodesc">Tax / EPF / PPF / NPS retrieval + tool-observe loops for statement workflows.</div></div>
+          </div>
+          <div class="evoitem fut">
+            <div class="evophase">Phase 5+</div>
+            <div><div class="evotitle">+ Fine-tuning</div><div class="evodesc">Tune on labeled parsing, alert, and explanation examples.</div></div>
+          </div>
+          <div class="evoitem fut">
+            <div class="evophase">Long term</div>
+            <div><div class="evotitle">Distilled Model</div><div class="evodesc">Smaller task-specific model if volume and cost justify it.</div></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+</body>
+</html>
