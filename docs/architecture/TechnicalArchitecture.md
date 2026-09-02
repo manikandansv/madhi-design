@@ -18,6 +18,53 @@ Three AI modes, used by task type:
 
 ---
 
+## 1.5 Architecture Direction — DDD + Event-Driven Design, with Akka as a later runtime choice
+
+Madhi is best modeled as a domain-first system with explicit commands and domain events. The product has long-running workflows, AI-assisted interpretation, approval transitions, and future event processing, so the design should emphasize clear business boundaries and observable state change before adding an actor runtime.
+
+### Recommended architectural split
+
+- Domain layer: aggregate roots, value objects, commands, domain events, and business rules
+- Application layer: workflow orchestration, policy checks, and coordination between domain logic and infrastructure
+- Infrastructure layer: persistence, AI providers, caching, event transport, and monitoring
+- Runtime option: Akka actors only when the workflow becomes genuinely concurrent, supervision-heavy, or failure-isolated enough to justify actor-based orchestration
+
+### Core domain model
+
+| Bounded context | Aggregate / root | Examples of commands | Examples of events |
+|----------------|------------------|----------------------|--------------------|
+| Intake | UserPlan | SubmitIntake, AddGoal, ParseGoals | IntakeReceived, GoalsParsed |
+| Planning | GoalSet / MilestoneSet | GenerateMilestones, ApproveMilestone | MilestonesGenerated, MilestoneApproved |
+| Approval | ApprovalWorkflow | SubmitDecision, SkipMilestone | DecisionRecorded, PlanReady |
+| Monitoring | AlertStream | OnVarianceDetected, InvestigateAlert | AlertRaised, AlertResolved |
+
+### Why DDD and event-driven design are the real foundation
+
+- The business has meaningful state transitions: submit intake → parse goals → generate milestones → approve or skip → persist plan.
+- AI calls are slow and failure-prone, but they should not leak across the whole application as ad hoc service logic.
+- Approval and plan transitions are domain actions, not merely HTTP controller behaviors.
+- Future statement parsing, alert investigation, and variance processing fit naturally into event-driven processing.
+
+### When Akka becomes justified
+
+Akka is not the default starting point. It becomes a strong choice when workflow complexity, failure isolation, retries, and concurrency exceed what a clean domain + async event model can efficiently handle. In other words:
+
+- Start with DDD + events + application orchestration
+- Add Akka only when the workflow becomes actor-heavy or supervision-heavy
+- Keep the domain model stable even if the execution runtime changes later
+
+### Runtime layout
+
+- Spring Boot remains the ingress layer for REST APIs, validation, and security.
+- The domain model owns the business logic and transitions.
+- Asynchronous events coordinate internal steps and future integrations.
+- Kafka or Redis Streams can be introduced later for durable async handoff between workflow stages.
+- Akka is optional infrastructure for orchestration, timeout handling, and replay-safe workflow execution when complexity justifies it.
+
+This is not a rejection of Spring Boot or Akka. It is a deliberate recommendation to keep the architectural center on the domain, and only use Akka where it earns its place in the runtime.
+
+---
+
 ## 2. System Layers — All Phases
 
 ```
@@ -25,28 +72,28 @@ Three AI modes, used by task type:
 │                  Browser (React + TypeScript)            │
 │  Intake form · Approval queue · Plan view · Dashboard   │
 └──────────────────────────┬──────────────────────────────┘
-                           │ HTTPS / WebSocket (Phase 5+)
+                           │ HTTPS / WebSocket
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│              Backend Services (Java + Spring Boot)       │
-│                                                         │
-│  REST API routes · File upload handler (Phase 4+)       │
-│  Event engine (Phase 5+) · Job queue (Phase 4+)         │
-│                                                         │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │               AI Wrapper                         │   │
-│  │  PromptBuilder · ProviderClient · OutputParser   │   │
-│  │  AgentRunner (Phase 4+) · indian-finance.md      │   │
-│  └──────────────────────────────────────────────────┘   │
+│         Spring Boot API Layer (HTTP ingress + auth)     │
+│  REST endpoints · validation · security · adapters       │
 └──────────────────────────┬──────────────────────────────┘
-                           │
+                           │ commands/messages
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│                Akka Domain Runtime (Reactive core)        │
+│  IntakeWorkflowActor · GoalParserActor                  │
+│  MilestoneEngineActor · ApprovalActor · EventRouter     │
+│  Supervision · retries · timeout handling · state       │
+└──────────────────────────┬──────────────────────────────┘
+                           │ domain events / async jobs
           ┌────────────────┼──────────────────┐
           ▼                ▼                  ▼
-   ┌─────────────┐  ┌────────────┐   ┌──────────────┐
-   │ Foundation  │  │  Data      │   │  Search +    │
-   │ Model API   │  │  Layer     │   │  Cache Layer │
-   │ Claude/OAI  │  │ (below)    │   │  (below)     │
-   └─────────────┘  └────────────┘   └──────────────┘
+   ┌─────────────┐  ┌─────────────┐  ┌────────────────────┐
+   │ AI Providers│  │ Data + Cache│  │ Event / Queue      │
+   │ Claude/OAI  │  │ Postgres /  │  │ Redis Streams /    │
+   │ + prompts   │  │ Mongo / Redis│  │ Kafka (future)     │
+   └─────────────┘  └─────────────┘  └────────────────────┘
 ```
 
 ---

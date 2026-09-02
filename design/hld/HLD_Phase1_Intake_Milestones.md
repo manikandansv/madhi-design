@@ -49,6 +49,40 @@ User
 
 ---
 
+## Architecture pattern — DDD + event-driven workflow, with Akka as a later runtime option
+
+Phase 1 should be modeled as a command-driven workflow with explicit domain events. This keeps the business behavior understandable, testable, and ready for async AI processing without prematurely forcing an actor runtime into the design.
+
+### Domain flow
+
+- `SubmitIntake` is the entry command from the frontend.
+- an application workflow handles validation and draft-state creation.
+- the goal parsing step transforms each raw goal into `StructuredGoal`.
+- deterministic milestone rules generate rule-based milestones.
+- the AI suggestion pass adds non-obvious milestones specific to the profile.
+- the approval workflow records approve / skip decisions and transitions the plan to `ReadyForPlanView`.
+- `PlanStore` persists the final `Phase1Plan` after the approval gate is complete.
+
+### Events in the domain
+
+- `IntakeReceived`
+- `GoalsParsed`
+- `MilestonesGenerated`
+- `MilestoneApproved`
+- `MilestoneSkipped`
+- `PlanPersisted`
+
+### Why this is the right pattern
+
+- The user journey is stateful and multi-step.
+- AI calls are asynchronous and may fail or time out.
+- Approval is a domain transition, not just a UI button click.
+- This keeps business logic in the domain and makes the flow resilient to future event-stream extensions.
+
+This pattern does not replace the Spring Boot API layer; it defines a clear domain boundary. The API remains the external boundary, while workflow coordination sits in the application/domain layer. Akka can be introduced later if the workflow becomes supervision-heavy or actor-based orchestration becomes necessary.
+
+---
+
 ## Module 1 — IntakeForm
 
 **Responsibility:** Collect and validate all user inputs across a structured multi-step form. No inference — what the user states is what goes out. The richer the profile collected here, the more signal the rule engine and the AI have to work with in later modules.

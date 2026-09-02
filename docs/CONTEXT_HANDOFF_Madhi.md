@@ -5,6 +5,8 @@
 **Tagline:** Clear Paths.
 **Name:** Madhi (மதி) — Tamil for moon / wisdom / judgment. The UI's signature visual (moon-phase indicators for progress and milestone status) comes directly from this.
 
+**Architecture direction:** Domain-driven design with strong event-driven workflow modeling. Spring Boot remains the API and infrastructure shell, and the business workflow logic is modeled as commands and domain events. Akka is a later runtime option for highly asynchronous or supervision-heavy orchestration, not the default starting point.
+
 ---
 
 ## Document index

@@ -144,9 +144,9 @@
       <div>
         <h1>Madhi System Architecture</h1>
         <p class="subtitle">
-          End-to-end flow: client goal input → Spring Boot backend → AI wrapper + foundation model →
-          data persistence (Phase 3+) → Kafka async streaming (Phase 4+).
-          Phase 2 feasibility engine lives inside the backend.
+          End-to-end flow: client goal input → Spring Boot HTTP layer → Akka domain runtime (commands + events) →
+          AI wrapper + foundation model → data persistence (Phase 3+) → Kafka async streaming (Phase 4+).
+          This architecture keeps business orchestration in a reactive domain core, while Spring Boot remains the API and infrastructure shell.
         </p>
       </div>
       <div class="legend">
@@ -206,11 +206,15 @@
 
         <div class="layer backend">
           <div class="lh">
-            <div class="lt">Layer 2 — Backend Services <span class="badge active">Active</span></div>
-            <div class="ltech">Java 21 · Spring Boot · Maven</div>
+            <div class="lt">Layer 2 — Spring Boot + Akka Domain Runtime <span class="badge active">Reactive core</span></div>
+            <div class="ltech">Java 21 · Spring Boot · Akka · Maven</div>
           </div>
           <div class="lb">
-            <div class="c act">@RestController<span class="cd">/api/parse-goal · /api/suggest-milestones · /api/alerts · /api/variance</span></div>
+            <div class="c act">@RestController<span class="cd">HTTP ingress, validation, auth, and routing</span></div>
+            <div class="c act">IntakeWorkflowActor<span class="cd">Command-driven orchestration for submit / parse / approve</span></div>
+            <div class="c act">GoalParserActor<span class="cd">Transforms raw goals into structured domain objects</span></div>
+            <div class="c act">MilestoneEngineActor<span class="cd">Deterministic rule checks before AI suggestion passes</span></div>
+            <div class="c act">ApprovalActor<span class="cd">Tracks approve / skip transitions and enforces plan gate</span></div>
             <div class="c ph2">Feasibility Engine <span class="badge phase2" style="font-size:8px">Phase 2</span><span class="cd">Capacity vs goal amount vs timeline</span></div>
             <div class="c ph2">Alternative Path Generator<span class="cd">Longer timeline / smaller target / higher contribution</span></div>
             <div class="c ph2">Inflation + EPF/PPF Projector<span class="cd">Future cost · retirement corpus · retirement gap</span></div>
@@ -228,7 +232,7 @@
                 <span class="pn">Observe</span><span class="pa">→ loop</span>
                 <span class="badge phase3" style="font-size:8px;padding:1px 5px">Mode B</span>
               </div>
-              <div class="ctag" style="margin-top:3px;">Mode B: Ph 1 client-side 2-turn loop (active) · Ph 4 server AgentRunner (future)</div>
+              <div class="ctag" style="margin-top:3px;">Domain events power the flow: IntakeReceived → GoalsParsed → MilestonesGenerated → MilestoneApproved</div>
               <div class="ctag">📄 <strong>indian-finance.md</strong> injected into every call</div>
             </div>
             <div class="c fut">Background Workers<span class="cd">Kafka consumers for statement parse jobs (Phase 4)</span></div>

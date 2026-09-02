@@ -4,6 +4,49 @@ This document is the design authority for code. It covers exact TypeScript types
 
 ---
 
+## 0. Architecture Model — DDD + event-driven workflow
+
+Phase 1 is intentionally structured as a command-driven domain workflow. The UI sends commands, the application/domain layer handles orchestration, and the result is emitted as events that update the plan state. This keeps the business model clean without prematurely overcommitting to an actor runtime.
+
+### Command/event model
+
+```scala
+sealed trait IntakeCommand
+case class SubmitIntake(profile: UserProfile, goals: List[String]) extends IntakeCommand
+case class ParseGoal(rawText: String) extends IntakeCommand
+case class GenerateMilestones(profile: UserProfile, goals: List[StructuredGoal]) extends IntakeCommand
+case class ApproveMilestone(milestoneId: String, userId: String) extends IntakeCommand
+case class SkipMilestone(milestoneId: String, reason: String, userId: String) extends IntakeCommand
+
+sealed trait IntakeEvent
+case class IntakeReceived(planId: String) extends IntakeEvent
+case class GoalsParsed(goals: List[StructuredGoal]) extends IntakeEvent
+case class MilestonesGenerated(milestones: List[PendingMilestone]) extends IntakeEvent
+case class MilestoneApproved(id: String, approvedAt: Instant) extends IntakeEvent
+case class MilestoneSkipped(id: String, skippedAt: Instant) extends IntakeEvent
+case class Phase1PlanPersisted(planId: String) extends IntakeEvent
+```
+
+### Workflow responsibilities
+
+- `IntakeWorkflow`: validates and coordinates the overall session flow
+- `GoalParserService`: parses each raw goal to a structured goal object
+- `MilestoneRuleEngine`: runs deterministic rule checks
+- `MilestoneSuggestionService`: executes AI-generated non-obvious milestone suggestions
+- `ApprovalWorkflow`: records approve / skip transitions and enforces the gate
+- `PlanPersistenceService`: writes the final `Phase1Plan` after approval completion
+
+### Messaging principles
+
+- Commands are imperative: they ask the domain to do something.
+- Events are descriptive: they reflect what has already happened.
+- No business rule sits in a controller or a React component.
+- AI provider failures are treated as recoverable workflow failures with timeout and retry handling in the infrastructure layer.
+
+This is the preferred model for the early implementation. Akka can be introduced later if the orchestration, timeout handling, or supervision requirements become sufficiently complex to justify an actor runtime.
+
+---
+
 ## 1. Shared Types
 
 TypeScript types for the client only. Lives at `client/src/types/`. The Java server has equivalent records in `com/madhi/model/` — client and server are independent projects with no shared type library.
