@@ -8,6 +8,10 @@ This document is the design authority for code. It covers exact TypeScript types
 
 Phase 1 is intentionally structured as a command-driven domain workflow. The UI sends commands, the application/domain layer handles orchestration, and the result is emitted as events that update the plan state. This keeps the business model clean without prematurely overcommitting to an actor runtime.
 
+### Product scope guardrail
+
+Madhi is a planning and decision-support system, not a regulated financial advice engine. It may generate scenario-based allocation guidance across asset classes such as equities, mutual funds, gold, real estate, debt, and emergency cash, but every output must be labeled as a planning scenario using the user's profile and assumptions. The system must never present a scenario as a definitive personal investment instruction.
+
 ### Command/event model
 
 ```scala
@@ -48,6 +52,39 @@ This is the preferred model for the early implementation. Akka can be introduced
 ---
 
 ## 1. Shared Types
+
+### 1.0 Allocation scenario guidance types
+
+These are not direct investment recommendations. They define scenario-based ranges that can be generated from the same user profile and goal data used for milestones.
+
+```typescript
+export type AssetClass =
+  | "equities"
+  | "mutual_funds"
+  | "gold"
+  | "real_estate"
+  | "debt"
+  | "cash_emergency"
+  | "other";
+
+export interface AllocationRange {
+  asset_class: AssetClass;
+  min_pct: number;
+  max_pct: number;
+  rationale: string;
+  assumptions: string[];
+}
+
+export interface AllocationScenario {
+  id: string;
+  generated_for_goal_id?: string | null;
+  profile_snapshot_id: string;
+  scenario_label: string; // e.g. "moderate risk / 7-year horizon"
+  ranges: AllocationRange[];
+  advisory_note: string; // must clearly state this is scenario planning support
+  generated_at: string;
+}
+```
 
 TypeScript types for the client only. Lives at `client/src/types/`. The Java server has equivalent records in `com/madhi/model/` — client and server are independent projects with no shared type library.
 

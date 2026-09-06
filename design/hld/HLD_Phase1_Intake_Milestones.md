@@ -4,6 +4,19 @@
 
 Responsibilities, inputs/outputs, and key tradeoffs for the six modules that make up Phase 1. This is the design to confirm before moving to LLD. Nothing here is code.
 
+Madhi's product scope is broader than intake + milestone generation: it is a life-planning and decision-support system. One of its value-adds is scenario-based investment planning guidance across asset classes such as equities, mutual funds, gold, real estate, debt, and emergency cash. This guidance is explicitly framed as planning support and scenario analysis, not as regulated financial advice or a direct personal investment recommendation.
+
+---
+
+## Product scope guardrail
+
+**Advisory boundary:** Madhi may suggest allocation ranges and investment scenarios, but it must not present a portfolio as a definitive instruction. Every allocation suggestion must show:
+- the assumptions used (risk profile, goal horizon, liquidity needs, monthly investable capacity)
+- that it is a scenario estimate, not a regulated recommendation
+- the user is still expected to validate the output before acting
+
+The product's core trust model is: structured planning support with explainable reasoning, not black-box financial certainty.
+
 ---
 
 ## System boundary
@@ -299,6 +312,8 @@ This list is intentionally narrow. The AI's job is the long tail; the rule engin
 
 **Responsibility:** Call the AI with the full parsed context and ask it to identify non-obvious milestones specific to this person's profile and stated goals — things a fixed rule wouldn't catch. This is the only judgment call in Phase 1.
 
+The same profile context can later support a separate allocation guidance layer that translates risk profile, goal horizon, liquidity need, and investable capacity into scenario-based ranges across asset classes such as equities, mutual funds, gold, real estate, debt, and emergency cash. This output is advisory and scenario-based by design.
+
 **Inputs:**
 - `UserProfile`
 - `StructuredGoal[]`
@@ -316,6 +331,19 @@ PendingMilestone {
 ```
 
 **What the AI has to work with (and therefore can actually use):**
+
+For the allocation guidance layer, the AI can use the same structured profile plus any goal-specific constraints. It must not make absolute statements of investment correctness; it should present ranges and tradeoff narratives. Example output is a scenario band, not an exact portfolio:
+
+```json
+{
+  "equities": { "min_pct": 30, "max_pct": 45 },
+  "mutual_funds": { "min_pct": 20, "max_pct": 30 },
+  "gold": { "min_pct": 10, "max_pct": 15 },
+  "real_estate": { "min_pct": 0, "max_pct": 20 },
+  "debt": { "min_pct": 10, "max_pct": 20 },
+  "cash_emergency": { "min_pct": 5, "max_pct": 10 }
+}
+```
 
 With the richer intake, the AI now has real signal:
 - A self-employed person with irregular income → flag income stabilisation or business continuity

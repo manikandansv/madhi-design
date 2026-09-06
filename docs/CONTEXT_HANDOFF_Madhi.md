@@ -7,6 +7,8 @@
 
 **Architecture direction:** Domain-driven design with strong event-driven workflow modeling. Spring Boot remains the API and infrastructure shell, and the business workflow logic is modeled as commands and domain events. Akka is a later runtime option for highly asynchronous or supervision-heavy orchestration, not the default starting point.
 
+**System design baseline:** The product is a structured planning and decision-support system, not a generic AI finance chatbot. The system is organized around explicit domain workflows, event-driven state transitions, deterministic calculation layers, and controlled AI assistance at bounded task boundaries.
+
 ---
 
 ## Document index

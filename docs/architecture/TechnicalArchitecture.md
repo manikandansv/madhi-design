@@ -65,7 +65,129 @@ This is not a rejection of Spring Boot or Akka. It is a deliberate recommendatio
 
 ---
 
-## 2. System Layers — All Phases
+## 2. System Design Baseline
+
+The system should be designed as a domain-first workflow platform with a thin API shell and explicit business state transitions. The product is not a generic AI chatbot; it is a structured planning and decision-support system. The design therefore centers around a few durable principles:
+
+### 2.1 Design principles
+
+- User intent and plan state are first-class domain data.
+- AI is used only for bounded extraction, contextual explanation, or workflow augmentation.
+- Deterministic logic remains deterministic: feasibility math, tax calc, variance checks, and validation rules live outside the model.
+- Every workflow step emits a domain event so state transitions are observable and auditable.
+- The frontend is a client of the workflow, not the owner of business rules.
+- Akka is deliberately deferred until the workflow complexity proves the actor model is necessary.
+
+### 2.2 Core system components
+
+### Frontend
+
+- React + TypeScript + Vite
+- Routing for intake, plan, approval, and later dashboard views
+- Local state and app state orchestration for form, draft, and approval flow
+- No business rule execution in the browser beyond immediate validation and UX logic
+
+### API / application layer
+
+- Spring Boot REST API as the ingress boundary
+- Request validation, auth/session handling, DTO mapping, and API orchestration
+- Application services coordinate domain commands and infrastructure services
+- The API layer does not contain the core business logic; it delegates to domain services
+
+### Domain layer
+
+- `IntakeWorkflow`, `GoalParser`, `MilestoneEngine`, `ApprovalWorkflow`, `PlanPersistence`
+- Commands such as `SubmitIntake`, `ParseGoal`, `GenerateMilestones`, `ApproveMilestone`
+- Events such as `IntakeReceived`, `GoalsParsed`, `MilestonesGenerated`, `MilestoneApproved`, `PlanPersisted`
+- Rules that govern what can move from one state to another without the model deciding the result
+
+### Infrastructure layer
+
+- PostgreSQL for relational plan and user data
+- MongoDB for variable-schema statements and event payloads
+- Redis for cache, session state, and lightweight async queueing
+- AI provider adapters for model calls
+- Optional Kafka or Redis Streams for event fan-out when async processing becomes necessary
+
+### 2.3 End-to-end workflow model
+
+```text
+User fills form
+    -> API validates and stores draft
+    -> Application command: SubmitIntake
+    -> Domain workflow creates intake state
+    -> GoalParser extracts structured goals
+    -> MilestoneRuleEngine generates deterministic milestones
+    -> AI suggestion service adds context-specific milestones
+    -> Approval workflow records approve/skip actions
+    -> Plan persisted in relational store
+    -> UI renders approved plan and scenario summaries
+```
+
+### 2.4 Event-driven model
+
+The workflow should emit clear domain events at each transition boundary:
+
+- `IntakeReceived`
+- `GoalsParsed`
+- `MilestonesGenerated`
+- `MilestoneApproved`
+- `MilestoneSkipped`
+- `PlanPersisted`
+- `VarianceDetected`
+- `AlertRaised`
+- `AlertResolved`
+
+This keeps the system auditable and supports future asynchronous extension without scattering business logic across controllers and workers.
+
+### 2.5 System responsibilities by phase
+
+#### Phase 1
+
+- intake form collection and validation
+- raw goal capture
+- goal parsing and milestone generation
+- approval gate
+- plan persistence
+
+#### Phase 2
+
+- feasibility and path analysis
+- constrained optimization over multiple goals
+- explanation generation for options and tradeoffs
+
+#### Phase 3
+
+- risk profile guidance and allocation scenarios
+- scenario ranges across asset classes
+- tax-gap and allocation reasoning
+
+#### Phase 4
+
+- statement upload validation
+- secure PII masking
+- PDF/CSV parsing and transaction normalization
+- anomaly detection and validation
+
+#### Phase 5+
+
+- tracking, variance monitoring, and alerting
+- workflow-driven investigation and notification
+- optional streaming and event fan-out
+
+### 2.6 System constraints and guardrails
+
+- No direct financial advice framing. Outputs are presented as structured planning scenarios and assumptions.
+- No product-level choice of specific funds or tickers. Allocation guidance remains category-based.
+- AI is not allowed to silently mutate plan state. Human approval remains the gate.
+- All sensitive financial inputs are masked before any AI access.
+- The domain and API boundaries remain stable even if the runtime evolves.
+
+This is the baseline the project should implement before any optimization work or runtime changes like Akka are considered.
+
+---
+
+## 3. System Layers — All Phases
 
 ```
 ┌─────────────────────────────────────────────────────────┐
